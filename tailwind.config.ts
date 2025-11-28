@@ -67,6 +67,7 @@ export default {
       },
       fontFamily: {
         'calligraphy': ['Ma Shan Zheng', 'cursive'],
+        'calligraphy-alt': ['ZCOOL XiaoWei', 'serif'],
         'sans': ['Inter', 'sans-serif'],
       },
       borderRadius: {

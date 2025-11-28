@@ -1,37 +1,15 @@
 const experiences = [
   {
-    title: 'AI & Data Science Internship',
-    clan: 'Tech Sect',
-    period: 'Summer 2024',
-    description: 'Practiced advanced techniques in machine learning model development, contributing to production-grade AI systems.',
+    title: 'Software Engineer Intern',
+    clan: 'CGI',
+    period: '2025',
+    description: 'Practiced OCR techniques to extract structured information from images with high accuracy.',
     achievements: [
-      'Developed LLM fine-tuning pipeline',
-      'Improved model accuracy by 15%',
-      'Collaborated with senior practitioners',
+      'Developed OCR pipeline using PaddleOCR to extract structured information from images with high accuracy',
+      'Integrated extracted text into RAG (Retrieval-Augmented Generation) pipeline',
+      'Automated preprocessing and text-to-answer mapping workflows',
     ],
-  },
-  {
-    title: 'Engineering Squad',
-    clan: '4-Member Team',
-    period: '2023 - Present',
-    description: 'Led distributed system architecture projects, coordinating with fellow cultivators to build scalable solutions.',
-    achievements: [
-      'Designed multi-node LLM system',
-      'Implemented efficient data pipelines',
-      'Mentored junior team members',
-    ],
-  },
-  {
-    title: 'LLM Code Explainer',
-    clan: 'Research Project',
-    period: '2024',
-    description: 'Architected an intelligent system to document legacy codebases using large language models and transfer learning.',
-    achievements: [
-      'Built LoRA fine-tuning framework',
-      'Achieved 90% documentation accuracy',
-      'Open-sourced for the community',
-    ],
-  },
+  }
 ];
 
 const Experience = () => {

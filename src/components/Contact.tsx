@@ -11,12 +11,12 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Create mailto link
-    const mailtoLink = `mailto:tejas@example.com?subject=Message from ${encodeURIComponent(formData.name)}&body=${encodeURIComponent(formData.message)}%0A%0AFrom: ${encodeURIComponent(formData.email)}`;
-    
+    const mailtoLink = `mailto:tejas12gowda@gmail.com?subject=Message from ${encodeURIComponent(formData.name)}&body=${encodeURIComponent(formData.message)}%0A%0AFrom: ${encodeURIComponent(formData.email)}`;
+
     window.location.href = mailtoLink;
-    
+
     toast({
       title: 'Scroll Delivered',
       description: 'Your messenger pigeon has taken flight!',
@@ -32,7 +32,7 @@ const Contact = () => {
           Join My Sect
         </h2>
         <div className="h-1 w-32 mx-auto bg-wuxia-gold mb-8" />
-        
+
         <p className="text-center text-muted-foreground mb-16 text-lg">
           Send a message via messenger pigeon
         </p>
@@ -100,17 +100,17 @@ const Contact = () => {
 
               <div className="space-y-4">
                 <a
-                  href="mailto:tejas@example.com"
+                  href="mailto:tejas12gowda@gmail.com"
                   className="flex items-center space-x-3 text-foreground hover:text-wuxia-crimson transition-colors group"
                 >
                   <div className="w-10 h-10 rounded-full bg-wuxia-gold/20 flex items-center justify-center group-hover:bg-wuxia-crimson/20 transition-colors">
                     <Mail className="w-5 h-5" />
                   </div>
-                  <span>tejas@example.com</span>
+                  <span>tejas12gowda@gmail.com</span>
                 </a>
 
                 <a
-                  href="https://github.com"
+                  href="https://github.com/Tejascodex001"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 text-foreground hover:text-wuxia-crimson transition-colors group"
@@ -118,11 +118,11 @@ const Contact = () => {
                   <div className="w-10 h-10 rounded-full bg-wuxia-gold/20 flex items-center justify-center group-hover:bg-wuxia-crimson/20 transition-colors">
                     <Github className="w-5 h-5" />
                   </div>
-                  <span>github.com/tejas</span>
+                  <span>github.com/Tejascodex001</span>
                 </a>
 
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/in/tejas-gowda-sridhara"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 text-foreground hover:text-wuxia-crimson transition-colors group"
@@ -130,15 +130,15 @@ const Contact = () => {
                   <div className="w-10 h-10 rounded-full bg-wuxia-gold/20 flex items-center justify-center group-hover:bg-wuxia-crimson/20 transition-colors">
                     <Linkedin className="w-5 h-5" />
                   </div>
-                  <span>linkedin.com/in/tejas</span>
+                  <span>linkedin.com/in/tejas-gowda-sridhara</span>
                 </a>
               </div>
             </div>
 
             <div className="bg-gradient-to-br from-wuxia-crimson/10 to-wuxia-gold/10 p-6 rounded-lg border-2 border-wuxia-gold/30">
               <p className="text-sm text-foreground italic leading-relaxed">
-                "In the Jianghu of code, every connection strengthens the sect. 
-                Whether you seek collaboration, wisdom, or simply wish to exchange martial techniques, 
+                "In the Jianghu of code, every connection strengthens the sect.
+                Whether you seek collaboration, wisdom, or simply wish to exchange martial techniques,
                 my door is always open to fellow practitioners."
               </p>
             </div>

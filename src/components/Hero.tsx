@@ -19,7 +19,7 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden rice-paper">
       {/* Parallax Mountains Background */}
-      <div 
+      <div
         className="absolute inset-0 z-0 opacity-30"
         style={{
           backgroundImage: `url(${mountains})`,
@@ -31,11 +31,11 @@ const Hero = () => {
 
       {/* Drifting Fog Layers */}
       <div className="absolute inset-0 z-[1] pointer-events-none">
-        <div 
+        <div
           className="absolute inset-0 bg-gradient-to-b from-transparent via-wuxia-paper/40 to-transparent opacity-60 fog-drift"
           style={{ transform: `translateX(${scrollY * 0.1}px)` }}
         />
-        <div 
+        <div
           className="absolute inset-0 bg-gradient-to-t from-transparent via-wuxia-paper/30 to-transparent opacity-50 fog-drift-reverse"
           style={{ transform: `translateX(${-scrollY * 0.15}px)` }}
         />
@@ -63,7 +63,7 @@ const Hero = () => {
           Practitioner of AI · DSA · C++ · ML Arts
         </p>
 
-        <Button 
+        <Button
           onClick={scrollToNext}
           size="lg"
           className="bg-wuxia-crimson hover:bg-wuxia-crimson/90 text-wuxia-paper font-semibold px-8 py-6 text-lg rounded-none border-2 border-wuxia-ink shadow-lg transition-all hover:shadow-2xl hover:scale-105 opacity-0"

@@ -19,7 +19,7 @@ const SectInsignia = () => {
           fill="hsl(var(--rice-paper))"
           opacity="0.95"
         />
-        
+
         {/* Inner circle - gold */}
         <circle
           cx="30"
@@ -29,7 +29,7 @@ const SectInsignia = () => {
           strokeWidth="1"
           fill="none"
         />
-        
+
         {/* Bamboo sword - vertical */}
         <rect
           x="28"
@@ -39,7 +39,7 @@ const SectInsignia = () => {
           fill="hsl(var(--crimson-red))"
           rx="2"
         />
-        
+
         {/* Sword guard - horizontal */}
         <rect
           x="20"
@@ -49,7 +49,7 @@ const SectInsignia = () => {
           fill="hsl(var(--ancient-gold))"
           rx="1.5"
         />
-        
+
         {/* Bamboo nodes on sword */}
         <circle cx="30" cy="20" r="1.5" fill="hsl(var(--ancient-gold))" />
         <circle cx="30" cy="30" r="1.5" fill="hsl(var(--ancient-gold))" />

@@ -3,7 +3,7 @@ const skills = [
     name: 'Blade of Logic',
     tech: 'C++',
     description: 'Forging efficient algorithms with precision and power',
-    grade: 'Adept',
+    grade: 'Novice',
   },
   {
     name: 'Thousand-Petals Computation Palm',
@@ -12,22 +12,16 @@ const skills = [
     grade: 'Master',
   },
   {
-    name: 'Silent Shadow Step',
-    tech: 'Go',
-    description: 'Swift concurrent execution in distributed realms',
-    grade: 'Adept',
-  },
-  {
     name: 'Heavenly Pattern Recognition Arts',
     tech: 'Deep Learning',
     description: 'Perceiving hidden structures in chaos',
     grade: 'Master',
   },
   {
-    name: 'Data Swordsmanship',
-    tech: 'DSA',
-    description: 'Mastery of structures and algorithmic flows',
-    grade: 'Adept → Ascending',
+    name: 'Scroll of Divine Querying',
+    tech: 'SQL',
+    description: 'Summoning truth from boundless tables with precision and intent',
+    grade: 'Adept',
   },
   {
     name: 'Script-weaving Arts',
@@ -67,9 +61,9 @@ const Skills = () => {
                 <h3 className="text-2xl font-calligraphy text-wuxia-crimson mb-2 group-hover:text-wuxia-gold transition-colors group-active:scale-105 transition-transform">
                   {skill.name}
                 </h3>
-                
+
                 <div className="h-0.5 w-12 bg-wuxia-gold mb-4 group-hover:w-24 transition-all duration-300" />
-                
+
                 <p className="text-sm text-wuxia-gold font-semibold mb-2 uppercase tracking-wider">
                   {skill.tech}
                 </p>
@@ -80,7 +74,7 @@ const Skills = () => {
                     {skill.grade}
                   </span>
                 </div>
-                
+
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   {skill.description}
                 </p>

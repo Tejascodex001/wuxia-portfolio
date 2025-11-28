@@ -4,28 +4,28 @@ import { ExternalLink, Github } from 'lucide-react';
 
 const projects = [
   {
-    title: 'Legacy Codebase Explainer',
-    description: 'An intelligent system using LoRA fine-tuning to automatically document and explain complex legacy code, making ancient codebases accessible to modern practitioners.',
-    tech: ['LLM', 'LoRA', 'Python', 'NLP'],
-    github: 'https://github.com',
+    title: 'Auto-Immunity for Systems',
+    description: 'Self-learning cybersecurity system combining RAG-based LLM pipeline with Reinforcement Learning agents for real-time threat detection and response.',
+    tech: ['LLM', 'Reinforcement Learning', 'Python', 'Docker'],
+    github: 'https://github.com/Tejascodex001/Auto-immunity-for-systems',
   },
   {
-    title: 'OCR Image Comparison Tool',
-    description: 'Advanced optical character recognition system with intelligent comparison algorithms, detecting differences between document versions with martial precision.',
-    tech: ['Computer Vision', 'OCR', 'Python', 'OpenCV'],
-    github: 'https://github.com',
+    title: 'Sign Language Translation System',
+    description: ' Real-time ASL to English text conversion using OpenCV for gesture detection and feature extraction.',
+    tech: ['Computer Vision', 'OpenCV', 'Python', 'Random Forest'],
+    github: 'https://github.com/Tejascodex001/sign',
   },
   {
-    title: 'Distributed Multi-LLM Node System',
-    description: 'A distributed architecture coordinating multiple large language models across nodes, achieving harmony between computational power and efficiency.',
-    tech: ['Distributed Systems', 'LLM', 'Go', 'Microservices'],
-    github: 'https://github.com',
+    title: ' Face Recognition Attendance System',
+    description: ' Automated attendance tracking system using facial recognition for educational institutions.',
+    tech: ['Excel', 'OpenCV', 'Python'],
+    github: 'https://github.com/Tejascodex001/face_recognize_attendance_system',
   },
   {
     title: 'Wuxia-UI Portfolio',
     description: 'This elegant portfolio website combining traditional wuxia aesthetics with modern web technologies, creating a bridge between ancient art and digital mastery.',
     tech: ['React', 'TypeScript', 'Tailwind CSS', 'Vite'],
-    github: 'https://github.com',
+    github: 'https://github.com/Tejascodex001/wuxia-portfolio',
   },
 ];
 
@@ -67,13 +67,11 @@ const Projects = () => {
 
               {/* Scroll Content */}
               <div
-                className={`overflow-hidden transition-all duration-700 ease-out ${
-                  openScroll === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                }`}
+                className={`overflow-hidden transition-all duration-700 ease-out ${openScroll === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
               >
-                <div className={`px-6 pb-6 pt-2 border-t-2 border-wuxia-gold/20 transition-all duration-700 ${
-                  openScroll === index ? 'scroll-text-reveal' : ''
-                }`}>
+                <div className={`px-6 pb-6 pt-2 border-t-2 border-wuxia-gold/20 transition-all duration-700 ${openScroll === index ? 'scroll-text-reveal' : ''
+                  }`}>
                   <p className="text-foreground mb-4 leading-relaxed font-calligraphy-alt">
                     {project.description}
                   </p>

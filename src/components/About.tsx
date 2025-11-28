@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 const milestones = [
   {
     title: 'Early Training',
-    description: 'Began the journey with Python, learning the fundamental arts of programming',
-    tech: 'Python',
+    description: 'Began the journey with C and Python, learning the fundamental arts of programming',
+    tech: 'C · Python',
   },
   {
     title: 'Sect Specialization',
@@ -13,13 +13,13 @@ const milestones = [
   },
   {
     title: 'Forging Strength',
-    description: 'Honed skills in the demanding disciplines of C++ and Data Structures',
+    description: 'Honing skills in the demanding disciplines of C++ and Data Structures',
     tech: 'C++ · DSA',
   },
   {
     title: 'Current Trial',
-    description: 'Undertaking the challenge of Distributed AI Systems architecture',
-    tech: 'Distributed Systems',
+    description: 'Undertaking the challenge of Generative AI',
+    tech: 'Generative AI',
   },
 ];
 
@@ -63,9 +63,8 @@ const About = () => {
               <div
                 key={index}
                 data-index={index}
-                className={`milestone-item relative flex items-center ${
-                  index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'
-                }`}
+                className={`milestone-item relative flex items-center ${index % 2 === 0 ? 'flex-row' : 'flex-row-reverse'
+                  }`}
               >
                 {/* Bamboo Node */}
                 <div className="absolute left-1/2 transform -translate-x-1/2 w-8 h-8 rounded-full bg-wuxia-gold border-4 border-background shadow-lg z-10">
@@ -74,9 +73,8 @@ const About = () => {
 
                 {/* Content Card */}
                 <div
-                  className={`w-5/12 ${
-                    visibleItems.includes(index) ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'
-                  } transition-all duration-700`}
+                  className={`w-5/12 ${visibleItems.includes(index) ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'
+                    } transition-all duration-700`}
                   style={{ transitionDelay: `${index * 150}ms` }}
                 >
                   <div className="bg-card p-6 rounded-lg shadow-xl border-2 border-wuxia-gold/30 hover:border-wuxia-crimson/50 transition-all hover:shadow-2xl ink-splash">

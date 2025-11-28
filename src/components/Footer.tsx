@@ -7,14 +7,14 @@ const Footer = () => {
             Tejas
           </h3>
           <div className="h-0.5 w-24 mx-auto bg-wuxia-crimson mb-6" />
-          
+
           <p className="text-sm opacity-80 mb-6 max-w-md mx-auto">
             A wanderer in the digital Jianghu, forever seeking to master the arts of code and algorithm.
           </p>
 
           <div className="flex justify-center space-x-6 mb-8">
             <a
-              href="https://github.com"
+              href="https://github.com/Tejascodex001"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-wuxia-gold transition-colors"
@@ -23,7 +23,7 @@ const Footer = () => {
             </a>
             <span className="opacity-50">·</span>
             <a
-              href="https://linkedin.com"
+              href="https://linkedin.com/in/tejas-gowda-sridhara"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-wuxia-gold transition-colors"
@@ -32,7 +32,7 @@ const Footer = () => {
             </a>
             <span className="opacity-50">·</span>
             <a
-              href="mailto:tejas@example.com"
+              href="mailto:tejas12gowda@gmail.com"
               className="hover:text-wuxia-gold transition-colors"
             >
               Email

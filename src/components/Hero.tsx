@@ -25,19 +25,31 @@ const Hero = () => {
           backgroundImage: `url(${mountains})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          transform: `translateY(${scrollY * 0.5}px)`,
+          transform: `translateY(${scrollY * 0.3}px)`,
         }}
       />
 
+      {/* Drifting Fog Layers */}
+      <div className="absolute inset-0 z-[1] pointer-events-none">
+        <div 
+          className="absolute inset-0 bg-gradient-to-b from-transparent via-wuxia-paper/40 to-transparent opacity-60 fog-drift"
+          style={{ transform: `translateX(${scrollY * 0.1}px)` }}
+        />
+        <div 
+          className="absolute inset-0 bg-gradient-to-t from-transparent via-wuxia-paper/30 to-transparent opacity-50 fog-drift-reverse"
+          style={{ transform: `translateX(${-scrollY * 0.15}px)` }}
+        />
+      </div>
+
       {/* Floating Bamboo Decoration */}
-      <div className="absolute top-10 right-10 opacity-20 float-animation">
+      <div className="absolute top-10 right-10 opacity-20 float-animation z-[2]">
         <div className="w-32 h-64 bg-gradient-to-b from-wuxia-shadow to-transparent" />
       </div>
 
       {/* Hero Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto fade-up">
         <div className="mb-8">
-          <h1 className="text-7xl md:text-9xl font-calligraphy text-wuxia-ink mb-4 scroll-unroll" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
+          <h1 className="text-7xl md:text-9xl font-calligraphy text-wuxia-ink mb-4 calligraphy-stroke relative" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
             Tejas
           </h1>
           <div className="h-1 w-48 mx-auto bg-gradient-to-r from-transparent via-wuxia-crimson to-transparent ink-brush" />

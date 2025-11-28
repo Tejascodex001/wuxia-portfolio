@@ -44,7 +44,7 @@ const Projects = () => {
           {projects.map((project, index) => (
             <div
               key={index}
-              className="relative bg-wuxia-paper border-2 border-wuxia-gold/40 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all opacity-0 fade-up"
+              className="relative bg-wuxia-paper border-2 border-wuxia-gold/40 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all opacity-0 fade-up parchment-texture"
               style={{ animationDelay: `${index * 150}ms` }}
             >
               {/* Scroll Header */}
@@ -67,12 +67,14 @@ const Projects = () => {
 
               {/* Scroll Content */}
               <div
-                className={`overflow-hidden transition-all duration-500 ${
+                className={`overflow-hidden transition-all duration-700 ease-out ${
                   openScroll === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                 }`}
               >
-                <div className="px-6 pb-6 pt-2 border-t-2 border-wuxia-gold/20">
-                  <p className="text-foreground mb-4 leading-relaxed">
+                <div className={`px-6 pb-6 pt-2 border-t-2 border-wuxia-gold/20 transition-all duration-700 ${
+                  openScroll === index ? 'scroll-text-reveal' : ''
+                }`}>
+                  <p className="text-foreground mb-4 leading-relaxed font-calligraphy-alt">
                     {project.description}
                   </p>
 

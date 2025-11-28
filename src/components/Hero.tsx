@@ -50,7 +50,7 @@ const Hero = () => {
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto fade-up">
         <div className="mb-8">
           <h1 className="text-7xl md:text-9xl font-calligraphy text-wuxia-ink mb-4 calligraphy-stroke relative" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.1)' }}>
-            Tejas
+            Tejas Gowda S
           </h1>
           <div className="h-1 w-48 mx-auto bg-gradient-to-r from-transparent via-wuxia-crimson to-transparent ink-brush" />
         </div>

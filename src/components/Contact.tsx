@@ -1,302 +1,264 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowUpRight, Check, Copy, Github, Linkedin, Mail, Send, Twitter } from 'lucide-react';
-import Reveal from '@/components/Reveal';
-import SectionHeading from '@/components/SectionHeading';
-import { Button } from '@/components/ui/button';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { ArrowUpRight, Check, Copy } from 'lucide-react';
+import ParticleText from './ParticleText';
+import Reveal from './Reveal';
+import SectionHeading from './SectionHeading';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/sonner';
 import { profile } from '@/data/content';
 
-type Social = { label: string; handle: string; href: string; icon: ReactNode };
+const lastSegment = (url: string) => url.replace(/\/+$/, '').split('/').pop() ?? url;
 
-const socials: Social[] = [
-  { label: 'GitHub', handle: 'Tejascodex001', href: profile.github, icon: <Github aria-hidden className="h-7 w-7" /> },
-  { label: 'LinkedIn', handle: 'tejas-gowda-sridhara', href: profile.linkedin, icon: <Linkedin aria-hidden className="h-7 w-7" /> },
-  { label: 'X', handle: '@tejas_gowda_001', href: profile.x, icon: <Twitter aria-hidden className="h-7 w-7" /> },
-  {
-    label: profile.lab.name,
-    handle: 'The lab',
-    href: profile.lab.url,
-    icon: (
-      <span aria-hidden className="font-display text-[2rem] leading-7">
-        器
-      </span>
-    ),
-  },
+const rows = [
+  { name: 'GitHub', handle: lastSegment(profile.github), href: profile.github },
+  { name: 'LinkedIn', handle: lastSegment(profile.linkedin), href: profile.linkedin },
+  { name: 'X', handle: `@${lastSegment(profile.x)}`, href: profile.x },
+  { name: profile.lab.name, handle: lastSegment(profile.lab.url), href: profile.lab.url },
 ];
 
 type Fields = { name: string; email: string; message: string };
 type Errors = Partial<Record<keyof Fields, string>>;
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-const validate = (f: Fields): Errors => {
+const validate = ({ name, email, message }: Fields): Errors => {
   const e: Errors = {};
-  if (!f.name.trim()) e.name = 'Tell me what to call you.';
-  if (!f.email.trim()) e.email = 'Your email lets me reply.';
-  else if (!EMAIL_RE.test(f.email.trim())) e.email = 'That does not look like an email address.';
-  if (f.message.trim().length < 10) e.message = 'A few more words, please (10 characters or more).';
+  if (!name.trim()) e.name = 'Tell me what to call you.';
+  if (!email.trim()) e.email = 'I need an address to reply to.';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) e.email = 'That does not look like an email address.';
+  if (message.trim().length < 10) e.message = 'A sentence or two, at least 10 characters.';
   return e;
 };
 
-const fieldClass =
-  'border-border bg-background/70 text-base placeholder:text-muted-foreground/70 focus-visible:ring-wuxia-crimson aria-[invalid=true]:border-wuxia-crimson';
+const useWide = () => {
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const update = () => setWide(mq.matches);
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return wide;
+};
 
 const Contact = () => {
+  const wide = useWide();
+  const [copied, setCopied] = useState(false);
   const [fields, setFields] = useState<Fields>({ name: '', email: '', message: '' });
   const [errors, setErrors] = useState<Errors>({});
-  const [copied, setCopied] = useState(false);
-  const copyTimer = useRef<number | undefined>();
+  const emailRef = useRef<HTMLSpanElement>(null);
+  const copyTimer = useRef(0);
 
-  useEffect(() => () => window.clearTimeout(copyTimer.current), []);
+  useEffect(() => () => clearTimeout(copyTimer.current), []);
 
   const copyEmail = async () => {
-    let ok = false;
     try {
       await navigator.clipboard.writeText(profile.email);
-      ok = true;
-    } catch {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = profile.email;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-      } catch {
-        ok = false;
-      }
-    }
-    if (ok) {
       toast.success('Email copied', { description: profile.email });
       setCopied(true);
-      window.clearTimeout(copyTimer.current);
-      copyTimer.current = window.setTimeout(() => setCopied(false), 2200);
-    } else {
-      toast.error('Could not copy automatically', { description: profile.email });
+      clearTimeout(copyTimer.current);
+      copyTimer.current = window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard blocked: select the text so Ctrl/Cmd+C finishes the job.
+      const el = emailRef.current;
+      if (el) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+      toast('Selected for you', { description: 'Press Ctrl/Cmd + C to copy the address.' });
     }
   };
 
-  const update = (key: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const onChange = (key: keyof Fields) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
     setFields((f) => ({ ...f, [key]: value }));
     if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }));
   };
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     const found = validate(fields);
     setErrors(found);
-    const firstBad = (['name', 'email', 'message'] as const).find((k) => found[k]);
-    if (firstBad) {
-      document.getElementById(`contact-${firstBad}`)?.focus();
+    if (Object.keys(found).length) {
+      const first = (Object.keys(found) as (keyof Fields)[])[0];
+      document.getElementById(`contact-${first}`)?.focus();
       return;
     }
-
     const name = fields.name.trim();
-    const email = fields.email.trim();
+    const from = fields.email.trim();
     const subject = `Hello from ${name}`;
-    const body = `${fields.message.trim()}\n\n${name}\n${email}`;
-    const href = `mailto:${profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    toast('Opening your mail app…', { description: 'Press send there to deliver your message.' });
-    window.location.href = href;
+    const body = `${fields.message.trim()}\n\n${name}\n${from}`;
+    toast('Opening your mail app…', { description: 'Nothing is sent until you press send there.' });
+    window.location.href = `mailto:${profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setFields({ name: '', email: '', message: '' });
     setErrors({});
   };
 
-  const err = (k: keyof Fields) => (errors[k] ? `contact-${k}-error` : undefined);
+  const fieldClass = (key: keyof Fields) =>
+    `bg-background/60 ${errors[key] ? 'border-destructive focus-visible:ring-destructive' : ''}`;
+
+  const label = 'mb-2 block font-mono text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground';
+  const err = 'mt-1.5 text-sm text-destructive';
 
   return (
-    <section id="contact" className="relative overflow-hidden px-4 py-24 md:py-36">
-      <div className="mx-auto max-w-6xl">
-        <SectionHeading kicker="Join the sect" zh="盟">
-          Send a <em>messenger pigeon</em>
+    <section id="contact" className="relative scroll-mt-16 py-24 md:py-36">
+      <div className="mx-auto max-w-[1400px] px-5 md:px-10">
+        <SectionHeading index="05" kicker="Contact">
+          Say <em>hello</em>
         </SectionHeading>
 
-        <div className="grid gap-12 lg:grid-cols-12 lg:gap-14">
-          {/* Left: email, quote, socials */}
+        <h3 className="-mx-1 mb-14 md:mb-20">
+          <ParticleText
+            text="HELLO"
+            height={wide ? 220 : 120}
+            className="font-display font-normal text-ink"
+            align="left"
+          />
+        </h3>
+
+        <div className="grid gap-14 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-7">
             <Reveal>
-              <p className="kicker mb-3">Fastest route</p>
+              <p className="mb-8 max-w-xl text-lg text-muted-foreground">
+                I like working on AI and systems problems that need someone to read the paper, write the kernel and ship
+                the thing. If you are building something along those lines, or just want to compare notes, write to me.
+              </p>
+
               <button
                 type="button"
                 onClick={copyEmail}
+                className="group block w-full rounded-md py-2 text-left"
                 aria-label={`Copy email address ${profile.email}`}
-                className="group relative block w-full max-w-full break-all rounded-xl text-left font-display text-[clamp(1.5rem,6.6vw,3.6rem)] leading-[1.1] text-foreground transition-colors hover:text-wuxia-crimson"
               >
-                <span className="bg-[linear-gradient(hsl(var(--crimson-red)),hsl(var(--crimson-red)))] bg-[length:0%_3px] bg-left-bottom bg-no-repeat pb-1 transition-[background-size] duration-500 ease-out group-hover:bg-[length:100%_3px] group-focus-visible:bg-[length:100%_3px]">
+                <span
+                  ref={emailRef}
+                  className="block break-all font-display text-[1.6rem] font-semibold leading-[1.05] tracking-tight transition-colors group-hover:text-primary sm:text-4xl lg:text-[2.7rem]"
+                >
                   {profile.email}
                 </span>
-                <span
-                  aria-hidden
-                  className="ml-3 inline-grid h-9 w-9 translate-y-[-0.15em] place-items-center rounded-full border border-[hsl(var(--ancient-gold)/0.7)] align-middle text-gold transition-colors group-hover:border-wuxia-crimson group-hover:text-wuxia-crimson"
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                <span className="mt-3 flex items-center gap-2 font-mono text-xs text-muted-foreground">
+                  {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
+                  <span aria-live="polite">{copied ? 'Copied to clipboard' : 'Click to copy'}</span>
                 </span>
               </button>
-              <span className="sr-only" role="status" aria-live="polite">
-                {copied ? 'Email copied to clipboard' : ''}
-              </span>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg" className="rounded-full bg-wuxia-crimson px-6 text-primary-foreground hover:bg-[hsl(var(--crimson-red)/0.9)]">
-                  <a href={`mailto:${profile.email}`}>
-                    <Mail aria-hidden /> Write mail
+              <a
+                href={`mailto:${profile.email}`}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Write mail <ArrowUpRight className="h-4 w-4" />
+              </a>
+            </Reveal>
+
+            <Reveal delay={100} as="ul" className="mt-12 border-t border-border">
+              {rows.map((r) => (
+                <li key={r.name}>
+                  <a
+                    href={r.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative flex items-center justify-between gap-4 border-b border-border py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="font-display text-2xl font-semibold tracking-tight md:text-3xl">{r.name}</span>
+                    <span className="flex min-w-0 items-center gap-3 font-mono text-xs text-muted-foreground md:text-sm">
+                      <span className="truncate">{r.handle}</span>
+                      <ArrowUpRight className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
+                    </span>
+                    <span
+                      aria-hidden
+                      className="absolute -bottom-px left-0 h-px w-full origin-left scale-x-0 bg-primary transition-transform duration-500 ease-[cubic-bezier(.2,.8,.2,1)] group-hover:scale-x-100 group-focus-visible:scale-x-100"
+                    />
+                    <span className="sr-only"> (opens in a new tab)</span>
                   </a>
-                </Button>
-                <span className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">or tap the address to copy</span>
-              </div>
-            </Reveal>
-
-            <Reveal delay={120} className="mt-12">
-              <figure className="relative border-l-2 border-[hsl(var(--ancient-gold)/0.7)] pl-5 md:pl-7">
-                <blockquote className="max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-                  <span className="font-display text-2xl text-wuxia-crimson">門常開。</span> The gate stays open. If you are
-                  building something odd, ambitious or just interesting, in AI, systems or somewhere between, I would like to
-                  hear about it.
-                </blockquote>
-                <figcaption className="kicker mt-3">Open to collaboration</figcaption>
-              </figure>
-            </Reveal>
-
-            <ul className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4 md:gap-4">
-              {socials.map((s, i) => (
-                <li key={s.label}>
-                  <Reveal delay={i * 80} className="h-full">
-                    <a
-                      href={s.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="glass group relative flex h-full min-h-[10.5rem] flex-col justify-between overflow-hidden rounded-2xl p-4 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-[hsl(var(--crimson-red)/0.6)] hover:shadow-[0_18px_44px_-16px_hsl(var(--crimson-red)/0.6)] focus-visible:-translate-y-1.5 focus-visible:border-[hsl(var(--crimson-red)/0.6)] motion-reduce:transform-none"
-                    >
-                      <span
-                        aria-hidden
-                        className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[hsl(var(--crimson-red)/0)] blur-2xl transition-colors duration-300 group-hover:bg-[hsl(var(--crimson-red)/0.25)]"
-                      />
-                      <span className="relative flex items-start justify-between text-gold transition-colors group-hover:text-wuxia-crimson">
-                        {s.icon}
-                        <ArrowUpRight
-                          aria-hidden
-                          className="h-5 w-5 opacity-0 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100 group-focus-visible:opacity-100"
-                        />
-                      </span>
-                      <span className="relative">
-                        <span className="block font-display text-2xl leading-tight text-foreground">{s.label}</span>
-                        <span className="mt-0.5 block truncate font-mono text-[0.68rem] tracking-wide text-muted-foreground">
-                          {s.handle}
-                        </span>
-                        <span className="sr-only"> (opens in a new tab)</span>
-                      </span>
-                    </a>
-                  </Reveal>
                 </li>
               ))}
-            </ul>
+            </Reveal>
           </div>
 
-          {/* Right: form */}
           <Reveal delay={150} className="lg:col-span-5">
             <form
               onSubmit={onSubmit}
               noValidate
-              aria-labelledby="contact-form-title"
-              className="glass relative rounded-3xl p-6 shadow-[0_30px_70px_-40px_hsl(var(--shadow-gray)/0.7)] md:p-8"
+              className="rounded-xl border border-border bg-card p-6 md:p-8"
+              aria-label="Contact form"
             >
-              <span
-                aria-hidden
-                className="seal absolute -right-2 -top-4 grid h-12 w-12 place-items-center rounded-md text-2xl md:-right-3"
-              >
-                信
-              </span>
-              <h3 id="contact-form-title" className="font-display text-3xl text-foreground md:text-4xl">
-                Leave a note
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">This opens your own mail app with the message ready to send.</p>
+              <p className="kicker mb-6">Or write from here</p>
 
-              <div className="mt-6 space-y-5">
-                <div>
-                  <label htmlFor="contact-name" className="kicker mb-2 block">
-                    Your name
-                  </label>
-                  <Input
-                    id="contact-name"
-                    name="name"
-                    autoComplete="name"
-                    maxLength={80}
-                    value={fields.name}
-                    onChange={update('name')}
-                    aria-invalid={!!errors.name}
-                    aria-describedby={err('name')}
-                    placeholder="Lin Feng"
-                    className={fieldClass}
-                  />
-                  {errors.name && (
-                    <p id="contact-name-error" role="alert" className="mt-1.5 text-sm text-wuxia-crimson">
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="contact-email" className="kicker mb-2 block">
-                    Your email
-                  </label>
-                  <Input
-                    id="contact-email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    inputMode="email"
-                    value={fields.email}
-                    onChange={update('email')}
-                    aria-invalid={!!errors.email}
-                    aria-describedby={err('email')}
-                    placeholder="you@example.com"
-                    className={fieldClass}
-                  />
-                  {errors.email && (
-                    <p id="contact-email-error" role="alert" className="mt-1.5 text-sm text-wuxia-crimson">
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="contact-message" className="kicker mb-2 block">
-                    Message
-                  </label>
-                  <Textarea
-                    id="contact-message"
-                    name="message"
-                    rows={5}
-                    maxLength={1500}
-                    value={fields.message}
-                    onChange={update('message')}
-                    aria-invalid={!!errors.message}
-                    aria-describedby={err('message')}
-                    placeholder="What are we building?"
-                    className={`${fieldClass} min-h-[130px] resize-y`}
-                  />
-                  {errors.message && (
-                    <p id="contact-message-error" role="alert" className="mt-1.5 text-sm text-wuxia-crimson">
-                      {errors.message}
-                    </p>
-                  )}
-                </div>
+              <div className="mb-5">
+                <label htmlFor="contact-name" className={label}>
+                  Name
+                </label>
+                <Input
+                  id="contact-name"
+                  name="name"
+                  autoComplete="name"
+                  value={fields.name}
+                  onChange={onChange('name')}
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? 'contact-name-err' : undefined}
+                  className={fieldClass('name')}
+                />
+                {errors.name && (
+                  <p id="contact-name-err" role="alert" className={err}>
+                    {errors.name}
+                  </p>
+                )}
               </div>
 
-              <Button
+              <div className="mb-5">
+                <label htmlFor="contact-email" className={label}>
+                  Email
+                </label>
+                <Input
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={fields.email}
+                  onChange={onChange('email')}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'contact-email-err' : undefined}
+                  className={fieldClass('email')}
+                />
+                {errors.email && (
+                  <p id="contact-email-err" role="alert" className={err}>
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="contact-message" className={label}>
+                  Message
+                </label>
+                <Textarea
+                  id="contact-message"
+                  name="message"
+                  rows={5}
+                  value={fields.message}
+                  onChange={onChange('message')}
+                  aria-invalid={!!errors.message}
+                  aria-describedby={errors.message ? 'contact-message-err' : undefined}
+                  className={`resize-y ${fieldClass('message')}`}
+                />
+                {errors.message && (
+                  <p id="contact-message-err" role="alert" className={err}>
+                    {errors.message}
+                  </p>
+                )}
+              </div>
+
+              <button
                 type="submit"
-                size="lg"
-                className="mt-7 w-full rounded-full bg-wuxia-crimson text-primary-foreground hover:bg-[hsl(var(--crimson-red)/0.9)]"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
               >
-                <Send aria-hidden /> Release the pigeon
-              </Button>
+                Compose in my mail app <ArrowUpRight className="h-4 w-4" />
+              </button>
+              <p className="mt-3 font-mono text-[0.7rem] text-muted-foreground">
+                This opens your mail client with a draft. Nothing is sent from this page.
+              </p>
             </form>
           </Reveal>
         </div>

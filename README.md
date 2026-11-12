@@ -1,15 +1,13 @@
-# Tejas Gowda S · Wuxia Portfolio
+# Tejas Gowda S · Portfolio
 
-A cinematic, wuxia-themed portfolio for **Tejas Gowda S**, Junior AI Engineer at [Kenpath](https://kenpath.io) and maintainer of [RTensorLabs](https://github.com/RTensorLabs).
+Personal site of **Tejas Gowda S**, Junior AI Engineer at [Kenpath](https://kenpath.io) and maintainer of [RTensorLabs](https://github.com/RTensorLabs).
 
-## Highlights
+## What's in it
 
-- **Ink canvas**: your cursor paints brush ink, clicks bloom, crimson petals drift down.
-- **Living sky**: a sun/moon arcs across the page as you scroll; mountains and mist parallax.
-- **Skill constellation**: an interactive map of three schools of technique.
-- **3D tilt project scrolls** with a spotlight that follows the pointer.
-- **Scroll-drawn journey** timeline.
-- **Command palette** (`⌘K` / `Ctrl+K` / `/`), light and dark themes, and a hidden Konami easter egg.
+- **Particle words.** Headlines such as `TEJAS`, `FLAME`, `SANCTUM` and `HELLO` are built from dots that scatter in, flee your cursor, flash cobalt while they travel, and explode when you click. Press the Konami code to detonate every word at once.
+- **Live project visuals**: a Transformer attention matrix for FLAME and a safety-number sigil with onion-routing hops for Sanctum.
+- **Index-style work list** with a cursor-following preview, and a stack section that dims everything but the tool you point at.
+- **Command palette** (`⌘K` / `Ctrl+K` / `/`) and light and dark themes.
 - Respects `prefers-reduced-motion`; keyboard accessible.
 
 ## Stack
@@ -30,4 +28,4 @@ npm run lint
 
 ## Edit the content
 
-All copy (projects, skills, journey, links) lives in [`src/data/content.ts`](src/data/content.ts). Design tokens are in [`src/index.css`](src/index.css).
+All copy (projects, tools, background, links) lives in [`src/data/content.ts`](src/data/content.ts). Design tokens are in [`src/index.css`](src/index.css). The particle effect is [`src/components/ParticleText.tsx`](src/components/ParticleText.tsx).

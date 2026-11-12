@@ -1,297 +1,238 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { useCallback, useEffect, useState, type MouseEvent } from 'react';
 import { useTheme } from 'next-themes';
-import { sections } from '@/data/content';
+import { Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { profile, sections } from '@/data/content';
 import { usePrefersReducedMotion } from '@/hooks/use-reduced-motion';
 
-/** Sect insignia: crimson ring, gold inner ring, bamboo sword with gold guard. */
-const Insignia = ({ className = '' }: { className?: string }) => (
-  <svg viewBox="0 0 64 64" className={className} aria-hidden="true" focusable="false">
-    <circle cx="32" cy="32" r="30" fill="hsl(var(--ink-black))" stroke="hsl(var(--crimson-red))" strokeWidth="3" />
-    <circle cx="32" cy="32" r="25" fill="none" stroke="hsl(var(--ancient-gold))" strokeWidth="1.5" />
-    <rect x="29.5" y="13" width="5" height="34" rx="2.5" fill="hsl(var(--crimson-red))" />
-    <rect x="19" y="24" width="26" height="4" rx="2" fill="hsl(var(--ancient-gold))" />
-    <circle cx="32" cy="19" r="2" fill="hsl(var(--ancient-gold))" />
-    <circle cx="32" cy="33" r="2" fill="hsl(var(--ancient-gold))" />
-    <circle cx="32" cy="43" r="2" fill="hsl(var(--ancient-gold))" />
-  </svg>
+const isMacLike = () =>
+  typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent);
+
+/** 3x3 dot grid; two dots carry the accent. */
+const Monogram = () => (
+  <span aria-hidden className="grid h-5 w-5 grid-cols-3 gap-[2px]">
+    {Array.from({ length: 9 }, (_, i) => (
+      <span
+        key={i}
+        className={`rounded-full transition-transform duration-300 group-hover:scale-125 ${
+          i === 0 || i === 4 || i === 8 ? 'bg-primary' : 'bg-foreground'
+        }`}
+        style={{ transitionDelay: `${i * 18}ms` }}
+      />
+    ))}
+  </span>
 );
 
-const ThemeToggle = () => {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  const dark = mounted && resolvedTheme === 'dark';
-
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(dark ? 'light' : 'dark')}
-      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
-      title={dark ? 'Light theme' : 'Dark theme'}
-      className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full text-foreground/80 transition-colors hover:bg-[hsl(var(--crimson-red)/0.1)] hover:text-wuxia-crimson"
-    >
-      <Sun
-        aria-hidden
-        className={`absolute h-[18px] w-[18px] transition-all duration-500 ease-out ${
-          dark ? 'scale-0 -rotate-90 opacity-0' : 'scale-100 rotate-0 opacity-100'
-        }`}
-      />
-      <Moon
-        aria-hidden
-        className={`absolute h-[18px] w-[18px] transition-all duration-500 ease-out ${
-          dark ? 'scale-100 rotate-0 opacity-100' : 'scale-0 rotate-90 opacity-0'
-        }`}
-      />
-    </button>
-  );
-};
-
 const Nav = () => {
+  const { resolvedTheme, setTheme } = useTheme();
   const reduced = usePrefersReducedMotion();
-  const [active, setActive] = useState<string>(sections[0].id);
   const [hidden, setHidden] = useState(false);
   const [open, setOpen] = useState(false);
-  const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
+  const [active, setActive] = useState<string>(sections[0].id);
+  const [mac, setMac] = useState(true);
 
-  const listRef = useRef<HTMLUListElement | null>(null);
-  const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const openRef = useRef(open);
-  openRef.current = open;
+  useEffect(() => setMac(isMacLike()), []);
 
-  const goTo = useCallback(
-    (id: string) => (e: React.MouseEvent) => {
-      e.preventDefault();
-      const el = document.getElementById(id);
-      setOpen(false);
-      if (!el) return;
-      window.scrollTo({
-        top: id === 'top' ? 0 : el.getBoundingClientRect().top + window.scrollY,
-        behavior: reduced ? 'auto' : 'smooth',
-      });
-      try {
-        history.replaceState(null, '', id === 'top' ? window.location.pathname : `#${id}`);
-      } catch {
-        /* ignore */
-      }
-    },
-    [reduced],
-  );
+  // Hide on scroll down, return on scroll up.
+  useEffect(() => {
+    let last = window.scrollY;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const y = window.scrollY;
+      const dy = y - last;
+      if (y < 80) setHidden(false);
+      else if (dy > 6) setHidden(true);
+      else if (dy < -6) setHidden(false);
+      if (Math.abs(dy) > 6 || y < 80) last = y;
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
 
-  /* Active section via IntersectionObserver */
+  // Active section.
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return;
-    const els = sections.map((s) => document.getElementById(s.id)).filter((el): el is HTMLElement => !!el);
-    if (!els.length) return;
     const io = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActive(entry.target.id);
-        });
+        for (const en of entries) if (en.isIntersecting) setActive(en.target.id);
       },
-      { rootMargin: '-40% 0px -55% 0px', threshold: 0 },
+      { rootMargin: '-40% 0px -55% 0px' },
     );
-    els.forEach((el) => io.observe(el));
+    sections.forEach((s) => {
+      const el = document.getElementById(s.id);
+      if (el) io.observe(el);
+    });
     return () => io.disconnect();
   }, []);
 
-  /* Sliding pill position */
-  const measure = useCallback(() => {
-    const list = listRef.current;
-    const link = linkRefs.current[active];
-    if (!list || !link || list.offsetParent === null) {
-      setPill(null);
-      return;
-    }
-    setPill({ x: link.offsetLeft, w: link.offsetWidth });
-  }, [active]);
-
-  useLayoutEffect(() => {
-    measure();
-  }, [measure]);
-
-  useEffect(() => {
-    window.addEventListener('resize', measure);
-    document.fonts?.ready.then(measure).catch(() => undefined);
-    return () => window.removeEventListener('resize', measure);
-  }, [measure]);
-
-  /* Hide on scroll down, show on scroll up (rAF throttled) */
-  useEffect(() => {
-    let lastY = window.scrollY;
-    let ticking = false;
-    const update = () => {
-      ticking = false;
-      const y = window.scrollY;
-      const dy = y - lastY;
-      if (openRef.current || y < 120) setHidden(false);
-      else if (dy > 6) setHidden(true);
-      else if (dy < -6) setHidden(false);
-      if (Math.abs(dy) > 6 || y < 120) lastY = y;
-    };
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(update);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  /* Close mobile menu: Escape, outside press, or growing to desktop */
+  // Mobile menu: lock scroll, close on Escape or when widening to desktop.
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    const onDown = (e: PointerEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     const mq = window.matchMedia('(min-width: 768px)');
     const onMq = () => mq.matches && setOpen(false);
     window.addEventListener('keydown', onKey);
-    window.addEventListener('pointerdown', onDown);
     mq.addEventListener('change', onMq);
     return () => {
+      document.body.style.overflow = prev;
       window.removeEventListener('keydown', onKey);
-      window.removeEventListener('pointerdown', onDown);
       mq.removeEventListener('change', onMq);
     };
   }, [open]);
 
+  const go = useCallback(
+    (id: string) => (e: MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      setOpen(false);
+      const behavior: ScrollBehavior = reduced ? 'auto' : 'smooth';
+      const el = document.getElementById(id);
+      // let the overlay release the scroll lock before scrolling
+      window.setTimeout(
+        () => (el && id !== 'top' ? el.scrollIntoView({ behavior }) : window.scrollTo({ top: 0, behavior })),
+        open ? 60 : 0,
+      );
+    },
+    [reduced, open],
+  );
+
   const openCommand = () => window.dispatchEvent(new CustomEvent('open-command'));
+  const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+
+  const iconBtn =
+    'inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
   return (
     <>
-      {/* Scroll progress */}
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-[3px]">
-        <div
-          className="h-full w-full origin-left bg-gradient-to-r from-[hsl(var(--crimson-red))] via-[hsl(var(--crimson-red))] to-[hsl(var(--ancient-gold))]"
-          style={{ transform: 'scaleX(var(--p, 0))' }}
-        />
-      </div>
-
       <header
-        className={`fixed inset-x-0 top-3 z-50 flex justify-center px-3 transition-transform duration-500 [transition-timing-function:cubic-bezier(.2,.7,.2,1)] md:top-4 ${
-          hidden && !open ? '-translate-y-[160%]' : 'translate-y-0'
+        className={`fixed inset-x-0 top-0 z-50 border-b border-border bg-background/75 backdrop-blur-md transition-transform duration-500 ease-[cubic-bezier(.2,.8,.2,1)] ${
+          hidden && !open ? '-translate-y-full' : 'translate-y-0'
         }`}
       >
-        <div ref={wrapRef} className="relative w-full max-w-md md:w-auto md:max-w-none">
-          <nav
-            aria-label="Primary"
-            className="glass flex items-center gap-1 rounded-full py-1.5 pl-2 pr-1.5 shadow-[0_8px_30px_-12px_hsl(var(--shadow-gray)/0.45)] md:gap-2 md:pl-2.5 md:pr-2"
+        <nav
+          aria-label="Primary"
+          className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-4 px-5 md:px-10"
+        >
+          <a
+            href="#top"
+            onClick={go('top')}
+            className="group flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={`${profile.name}, back to top`}
           >
-            <a
-              href="#top"
-              onClick={goTo('top')}
-              aria-label="Back to the top"
-              className="group grid h-9 w-9 shrink-0 place-items-center rounded-full"
-            >
-              <Insignia className="h-8 w-8 transition-transform duration-500 group-hover:rotate-[24deg] group-hover:scale-110" />
-            </a>
+            <Monogram />
+            <span className="font-display text-[0.95rem] font-semibold tracking-tight">
+              <span className="sm:hidden">TG</span>
+              <span className="hidden sm:inline">{profile.name}</span>
+            </span>
+          </a>
 
-            {/* Desktop links */}
-            <ul ref={listRef} className="relative ml-1 hidden items-center md:flex">
-              <span
-                aria-hidden
-                className="absolute inset-y-0 left-0 rounded-full bg-[hsl(var(--crimson-red)/0.1)] ring-1 ring-inset ring-[hsl(var(--ancient-gold)/0.5)] transition-[transform,width,opacity] duration-500 [transition-timing-function:cubic-bezier(.2,.8,.2,1)]"
-                style={{
-                  width: pill?.w ?? 0,
-                  transform: `translateX(${pill?.x ?? 0}px)`,
-                  opacity: pill ? 1 : 0,
-                }}
-              >
-                <span className="absolute inset-x-4 bottom-1 h-px bg-gradient-to-r from-transparent via-[hsl(var(--ancient-gold))] to-transparent" />
-              </span>
-              {sections.map((s) => {
-                const isActive = active === s.id;
-                return (
-                  <li key={s.id} className="relative">
-                    <a
-                      ref={(el) => {
-                        linkRefs.current[s.id] = el;
-                      }}
-                      href={`#${s.id}`}
-                      onClick={goTo(s.id)}
-                      aria-current={isActive ? 'location' : undefined}
-                      className={`block rounded-full px-3.5 py-2 font-mono text-[0.7rem] uppercase tracking-[0.18em] transition-colors ${
-                        isActive ? 'text-wuxia-crimson' : 'text-foreground/70 hover:text-foreground'
+          <ul className="hidden items-center gap-1 md:flex">
+            {sections.map((s) => {
+              const on = active === s.id;
+              return (
+                <li key={s.id}>
+                  <a
+                    href={`#${s.id}`}
+                    onClick={go(s.id)}
+                    aria-current={on ? 'true' : undefined}
+                    className={`group/link relative flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      on ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`h-1.5 w-1.5 rounded-full bg-primary transition-all duration-300 ${
+                        on ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
                       }`}
-                    >
-                      {s.label}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
+                    />
+                    {s.label}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
 
-            <span className="flex-1 md:hidden" />
-
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={openCommand}
-              aria-label="Open command menu"
-              aria-keyshortcuts="Control+K Meta+K"
-              className="flex h-9 shrink-0 items-center gap-2 rounded-full px-2.5 text-foreground/80 transition-colors hover:bg-[hsl(var(--crimson-red)/0.1)] hover:text-wuxia-crimson md:ml-1 md:border md:border-border md:px-3"
+              className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
+              aria-label="Search and commands"
             >
-              <Search aria-hidden className="h-4 w-4" />
-              <kbd className="hidden font-mono text-[0.68rem] tracking-wider md:inline">⌘K</kbd>
+              <Search className="h-3.5 w-3.5" aria-hidden />
+              <span>Search</span>
+              <kbd className="font-mono text-[0.68rem] tracking-wider text-muted-foreground">
+                {mac ? '⌘K' : 'Ctrl K'}
+              </kbd>
+            </button>
+            <button type="button" onClick={openCommand} className={`${iconBtn} md:hidden`} aria-label="Search and commands">
+              <Search className="h-[1.1rem] w-[1.1rem]" />
             </button>
 
-            <ThemeToggle />
+            <button type="button" onClick={toggleTheme} className={`${iconBtn} relative`} aria-label="Toggle theme">
+              <Sun className="h-[1.1rem] w-[1.1rem] rotate-0 scale-100 transition-all duration-500 dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-[1.1rem] w-[1.1rem] rotate-90 scale-0 transition-all duration-500 dark:rotate-0 dark:scale-100" />
+            </button>
 
             <button
               type="button"
-              onClick={() => setOpen((v) => !v)}
+              onClick={() => setOpen((o) => !o)}
+              className={`${iconBtn} md:hidden`}
               aria-label={open ? 'Close menu' : 'Open menu'}
               aria-expanded={open}
               aria-controls="mobile-menu"
-              className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full text-foreground/80 transition-colors hover:bg-[hsl(var(--crimson-red)/0.1)] hover:text-wuxia-crimson md:hidden"
             >
-              <Menu
-                aria-hidden
-                className={`absolute h-5 w-5 transition-all duration-300 ${open ? 'scale-0 rotate-90 opacity-0' : 'scale-100 rotate-0 opacity-100'}`}
-              />
-              <X
-                aria-hidden
-                className={`absolute h-5 w-5 transition-all duration-300 ${open ? 'scale-100 rotate-0 opacity-100' : 'scale-0 -rotate-90 opacity-0'}`}
-              />
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-          </nav>
-
-          {/* Mobile sheet */}
-          <div
-            id="mobile-menu"
-            hidden={!open}
-            className="glass absolute inset-x-0 top-full mt-2 overflow-hidden rounded-3xl p-2 shadow-[0_20px_50px_-20px_hsl(var(--shadow-gray)/0.6)] md:hidden"
-          >
-            <ul className="flex flex-col">
-              {sections.map((s, i) => {
-                const isActive = active === s.id;
-                return (
-                  <li key={s.id}>
-                    <a
-                      href={`#${s.id}`}
-                      onClick={goTo(s.id)}
-                      aria-current={isActive ? 'location' : undefined}
-                      className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors ${
-                        isActive ? 'bg-[hsl(var(--crimson-red)/0.1)] text-wuxia-crimson' : 'text-foreground hover:bg-foreground/5'
-                      }`}
-                    >
-                      <span className="w-6 font-mono text-[0.7rem] text-gold">{String(i + 1).padStart(2, '0')}</span>
-                      <span className="font-display text-2xl leading-none">{s.label}</span>
-                      {isActive && (
-                        <span aria-hidden className="ml-auto h-1.5 w-1.5 rounded-full bg-[hsl(var(--ancient-gold))]" />
-                      )}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
           </div>
+        </nav>
+
+        <div aria-hidden className="absolute inset-x-0 bottom-[-1px] h-[2px] overflow-hidden">
+          <div
+            className="h-full w-full origin-left bg-primary"
+            style={{ transform: 'scaleX(var(--p, 0))', willChange: 'transform' }}
+          />
         </div>
       </header>
+
+      {/* Sibling of the header: backdrop-filter would otherwise trap a fixed child. */}
+      <div
+        id="mobile-menu"
+        hidden={!open}
+        className="fixed inset-0 z-40 overflow-y-auto bg-background pt-14 md:hidden"
+      >
+        {open && (
+          <ul className="flex min-h-full flex-col justify-center gap-1 px-5 pb-10">
+            {sections.map((s, i) => (
+              <li key={s.id} className="rise border-b border-border" style={{ ['--rd' as string]: `${i * 60}ms` }}>
+                <a
+                  href={`#${s.id}`}
+                  onClick={go(s.id)}
+                  className="flex items-baseline justify-between py-4 font-display text-5xl font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className={active === s.id ? 'text-primary' : ''}>{s.label}</span>
+                  <span className="kicker">{String(i + 1).padStart(2, '0')}</span>
+                </a>
+              </li>
+            ))}
+            <li className="rise pt-6" style={{ ['--rd' as string]: `${sections.length * 60}ms` }}>
+              <a
+                href={`mailto:${profile.email}`}
+                className="font-mono text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                {profile.email}
+              </a>
+            </li>
+          </ul>
+        )}
+      </div>
     </>
   );
 };

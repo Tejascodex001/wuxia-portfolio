@@ -1,13 +1,12 @@
 import { useEffect } from 'react';
 import { useFinePointer, usePrefersReducedMotion } from '@/hooks/use-reduced-motion';
 
-const SCRAMBLE = '░▒▓█<>/\\{}[]=+*01武侠剑道氣';
+const SCRAMBLE = '░▒▓█<>/\\{}[]=+*01';
 
 /**
  * Global, DOM-level flourishes (no per-component wiring needed):
  *  - magnetic pull on buttons and links
  *  - text-scramble decode on every `.kicker` when it scrolls into view
- *  - shockwave ring on every click
  */
 const Fx = () => {
   const fine = useFinePointer();
@@ -94,32 +93,6 @@ const Fx = () => {
       io.disconnect();
       timers.forEach((id) => cancelAnimationFrame(id));
     };
-  }, [reduced]);
-
-  // Click shockwave
-  useEffect(() => {
-    if (reduced) return;
-    const onDown = (e: PointerEvent) => {
-      for (let i = 0; i < 2; i++) {
-        const ring = document.createElement('div');
-        const size = 90;
-        ring.setAttribute('aria-hidden', 'true');
-        Object.assign(ring.style, {
-          position: 'fixed', left: `${e.clientX - size / 2}px`, top: `${e.clientY - size / 2}px`,
-          width: `${size}px`, height: `${size}px`, borderRadius: '50%', pointerEvents: 'none', zIndex: '65',
-          border: `${i ? 1 : 2}px solid hsl(var(--crimson-red))`,
-          boxShadow: '0 0 24px hsl(var(--crimson-red) / .5)',
-        });
-        document.body.appendChild(ring);
-        const anim = ring.animate(
-          [{ transform: 'scale(.15)', opacity: 0.9 }, { transform: `scale(${i ? 3.4 : 2.4})`, opacity: 0 }],
-          { duration: 700 + i * 250, easing: 'cubic-bezier(.1,.7,.2,1)', delay: i * 90, fill: 'both' },
-        );
-        anim.onfinish = () => ring.remove();
-      }
-    };
-    window.addEventListener('pointerdown', onDown, { passive: true });
-    return () => window.removeEventListener('pointerdown', onDown);
   }, [reduced]);
 
   return null;

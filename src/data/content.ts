@@ -5,41 +5,32 @@ export const profile = {
   employer: { name: 'Kenpath', url: 'https://kenpath.io' },
   lab: { name: 'RTensorLabs', url: 'https://github.com/RTensorLabs' },
   tagline: 'Wanderer of Code',
+  headline: 'I build language models from scratch.',
   email: 'tejas12gowda@gmail.com',
   github: 'https://github.com/Tejascodex001',
   linkedin: 'https://linkedin.com/in/tejas-gowda-sridhara',
   x: 'https://twitter.com/tejas_gowda_001',
-  site: 'https://github.com/Tejascodex001/wuxia-portfolio',
+  repo: 'https://github.com/Tejascodex001/wuxia-portfolio',
 };
 
-export const roles = [
-  'Junior AI Engineer',
-  'Rust & C++ Practitioner',
-  'Language-Model Tinkerer',
-  'Maintainer of RTensorLabs',
-];
-
 export const intro = [
-  'I build across full-stack development and AI at Kenpath, and in the quiet hours I run RTensorLabs: an independent lab where the problem decides what we build next.',
-  'My path runs from C and Python, through machine learning and CUDA, to writing a Transformer by hand in Rust, and shipping an end-to-end encrypted messenger in Flutter.',
+  'I am a Junior AI Engineer at Kenpath, working across full-stack development and applied AI. Outside work I maintain RTensorLabs, an independent lab where the problem decides what we build next.',
+  'My path runs from C and Python, through machine learning and CUDA, to writing a Transformer by hand in Rust and shipping an end-to-end encrypted messenger in Flutter.',
 ];
 
 export const stats = [
-  { value: 9.5, decimals: 1, label: 'CGPA · B.E. AI & Data Science' },
+  { value: 9.5, decimals: 1, label: 'CGPA, B.E. AI & Data Science' },
   { value: 7, decimals: 0, label: 'Projects shipped' },
-  { value: 4, decimals: 0, label: 'Languages wielded' },
-  { value: 2026, decimals: 0, label: 'Joined Kenpath', plain: true },
+  { value: 4, decimals: 0, label: 'Languages used daily' },
 ];
 
 export type Featured = {
-  id: string;
+  id: 'flame' | 'sanctum';
   name: string;
   kicker: string;
   blurb: string;
   stack: string[];
-  hue: number;
   links: { label: string; href: string }[];
-  glyph: string;
 };
 
 export const featured: Featured[] = [
@@ -50,8 +41,6 @@ export const featured: Featured[] = [
     blurb:
       'A framework for building and training language models in Rust with Candle. Hand-written Transformer, tokenizer and optimizer, plus a learning site and interactive visualizer that explain every piece behind the model.',
     stack: ['Rust', 'Candle', 'Transformers', 'Hugging Face'],
-    hue: 18,
-    glyph: '焰',
     links: [
       { label: 'Explore FLAME', href: 'https://learn-rust-flame-site.vercel.app/' },
       { label: 'Try the visualizer', href: 'https://huggingface.co/spaces/Tejascodex001/flame-visualizer' },
@@ -59,13 +48,11 @@ export const featured: Featured[] = [
   },
   {
     id: 'sanctum',
-    name: 'Sanctum',
+    name: 'SANCTUM',
     kicker: 'A private space for your close circle',
     blurb:
       'An Android messenger built with Rust and Flutter. Chats, calls, photos and plans travel between phones with end-to-end encryption and Tor by default. Personal sigils, QR verification and safety numbers help friends check identities.',
-    stack: ['Rust', 'Flutter', 'Dart', 'E2E Encryption', 'Tor'],
-    hue: 262,
-    glyph: '盾',
+    stack: ['Rust', 'Flutter', 'Dart', 'E2E encryption', 'Tor'],
     links: [
       { label: 'Website', href: 'https://sanctum-rtensorlabs.vercel.app/' },
       { label: 'Source', href: 'https://github.com/RTensorLabs/sanctum' },
@@ -78,7 +65,7 @@ export const otherWork = [
   {
     name: 'GuardLayer',
     blurb: 'Python middleware for screening LLM inputs and outputs: prompt injection, jailbreaks, toxicity and personal information.',
-    tags: ['Python', 'LLM Safety'],
+    tags: ['Python', 'LLM safety'],
     href: 'https://github.com/Tejascodex001/GuardLayer',
   },
   {
@@ -107,15 +94,13 @@ export const otherWork = [
   },
 ];
 
-export type Skill = { name: string; note: string };
-export type School = { id: string; name: string; zh: string; skills: Skill[] };
+export type ToolGroup = { id: string; name: string; items: { name: string; note: string }[] };
 
-export const schools: School[] = [
+export const toolbox: ToolGroup[] = [
   {
     id: 'languages',
     name: 'Languages',
-    zh: '言',
-    skills: [
+    items: [
       { name: 'Rust', note: 'FLAME, Sanctum core' },
       { name: 'C++', note: 'Vision Engine, Anomaly Detector' },
       { name: 'Python', note: 'ML, RAG, LLM tooling' },
@@ -124,9 +109,8 @@ export const schools: School[] = [
   },
   {
     id: 'ml',
-    name: 'Machine Learning',
-    zh: '智',
-    skills: [
+    name: 'Machine learning',
+    items: [
       { name: 'PyTorch', note: 'Training and research' },
       { name: 'Candle', note: 'Rust-native inference and training' },
       { name: 'CUDA', note: 'GPU compute' },
@@ -138,8 +122,7 @@ export const schools: School[] = [
   {
     id: 'dev',
     name: 'Development',
-    zh: '器',
-    skills: [
+    items: [
       { name: 'Flutter', note: 'Cross-platform mobile' },
       { name: 'Docker', note: 'Shipping and isolation' },
       { name: 'Linux (Arch)', note: 'Daily driver' },
@@ -148,49 +131,37 @@ export const schools: School[] = [
   },
 ];
 
-export type Chapter = {
-  period: string;
-  title: string;
-  place: string;
-  kind: 'work' | 'edu';
-  points: string[];
-  current?: boolean;
-};
-
-export const journey: Chapter[] = [
+export const background = [
   {
-    period: 'Sep 2026 – Present',
+    id: 'now',
+    label: 'Now',
     title: 'Junior AI Engineer',
     place: 'Kenpath',
-    kind: 'work',
-    current: true,
-    points: ['Full-stack development and AI engineering.', 'Shipping product features where applied AI meets real users.'],
+    when: 'Sep 2026 to present',
+    note: 'Full-stack development and AI engineering.',
   },
   {
-    period: '2026',
-    title: 'B.E. in AI & Data Science',
-    place: 'Global Academy of Technology',
-    kind: 'edu',
-    points: ['Graduated with a CGPA of 9.5.'],
-  },
-  {
-    period: '2025',
+    id: 'before',
+    label: 'Before',
     title: 'Software Engineer Intern',
     place: 'CGI',
-    kind: 'work',
-    points: [
-      'Built an OCR pipeline with PaddleOCR to extract structured information from images with high accuracy.',
-      'Fed the extracted documents into a RAG system for question answering.',
-      'Automated preprocessing and text-to-answer mapping workflows.',
-    ],
+    when: '2025',
+    note: 'Built an OCR pipeline with PaddleOCR and fed the extracted documents into a RAG system for question answering.',
+  },
+  {
+    id: 'studied',
+    label: 'Studied',
+    title: 'B.E. in AI & Data Science',
+    place: 'Global Academy of Technology',
+    when: 'Graduated 2026',
+    note: 'CGPA of 9.5.',
   },
 ];
 
 export const sections = [
   { id: 'top', label: 'Gate' },
+  { id: 'work', label: 'Scrolls' },
+  { id: 'stack', label: 'Techniques' },
   { id: 'about', label: 'Path' },
-  { id: 'skills', label: 'Techniques' },
-  { id: 'projects', label: 'Scrolls' },
-  { id: 'journey', label: 'Journey' },
   { id: 'contact', label: 'Sect' },
 ];

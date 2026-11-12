@@ -1,7 +1,7 @@
 import { background, featured, intro, otherWork, profile, stats, toolbox, workshop } from '@/data/content';
 
 /** The whole portfolio as plain, readable HTML. Used for Read Mode and by assistive tech. */
-const ReadContent = () => (
+const ReadFallback = () => (
   <div className="read">
     <header>
       <p className="k">{profile.title} · {profile.employer.name} · {profile.lab.name}</p>
@@ -81,4 +81,4 @@ const ReadContent = () => (
   </div>
 );
 
-export default ReadContent;
+export default ReadFallback;

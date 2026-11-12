@@ -7,6 +7,8 @@
  * exact right frame.
  */
 
+import { background } from '../data/content';
+
 export const W = 1000;
 export const H = 560;
 export const GY = 452; // ground line
@@ -344,10 +346,16 @@ function build() {
   mark('rest');
   chapter('REST STOP', '息', t);
   const sitFrom = t;
-  idle(12);
+  // each dialogue line gets time to type out (38 chars/s) plus a cushion after the reading pause
+  const restBeat: number[] = [];
+  let off = 0.8;
+  for (const b of background) {
+    restBeat.push(sitFrom + off);
+    off += 0.5 + `${b.title}, ${b.place}. ${b.note}`.length / 38 + 1.4;
+  }
+  idle(off + 0.2);
   sits.push({ from: sitFrom, to: t });
   mark('restEnd');
-  const restBeat = [sitFrom + 0.8, sitFrom + 4.6, sitFrom + 8.4];
 
   /* ---------- 7. Save point: contact ---------- */
   mark('toSave');

@@ -129,7 +129,7 @@ function fig(c: CanvasRenderingContext2D, o: FigOpts, P: Pal): [number, number] 
     const e = ease(clamp(o.atk.p, 0, 1));
     sa = o.atk.step === 1 ? lerp(-2.4, 0.9, e) : o.atk.step === 2 ? lerp(1.0, -2.2, e) : lerp(-3.3, 3.0, e);
   } else if (sit) sa = -1.5;
-  else sa = o.air ? -0.2 : run ? -0.3 : -0.7 + Math.sin(o.idle * 2.2) * 0.05;
+  else sa = o.air ? 0.1 : run ? 0.55 : 0.85 + Math.sin(o.idle * 2.2) * 0.04;
   const len = o.zombie ? 26 : 20;
   const hxn = shx + Math.cos(sa) * len;
   const hyn = shy + Math.sin(sa) * len;

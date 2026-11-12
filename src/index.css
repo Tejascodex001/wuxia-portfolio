@@ -175,9 +175,12 @@ html.film-lock, html.film-lock body { overflow: hidden; height: 100%; overscroll
 .card { touch-action: pan-y; overscroll-behavior: contain; }
 .stage-canvas { cursor: pointer; }
 
-.status { position: absolute; right: 12px; bottom: 16px; z-index: 5; font: 400 16px var(--sfx); letter-spacing: .1em; background: #0f0d0b; color: #efe8d6; padding: 2px 12px; clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%); border-left: 6px solid #e0a82e; }
+.status { border: 0; cursor: pointer; position: absolute; right: 12px; bottom: 16px; z-index: 5; font: 400 16px var(--sfx); letter-spacing: .1em; background: #0f0d0b; color: #efe8d6; padding: 2px 12px; clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%); border-left: 6px solid #e0a82e; }
 .status[data-state='play'] { border-left-color: #3ef2d0; }
 .status[data-state='back'] { border-left-color: #d62a1e; }
+.status[data-state='read'] { border-left-color: #e0a82e; background: #d62a1e; color: #fff; animation: nudgeBg 1.2s ease-in-out infinite alternate; }
+@keyframes nudgeBg { to { background: #b81f15; } }
+.stage.reading .stage-canvas { cursor: default; }
 .wipe { position: absolute; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; }
 .wipe::before { content: ''; position: absolute; top: -10%; bottom: -10%; left: -40%; width: 40%; background: #0f0d0b; border-right: 10px solid #d62a1e; transform: skewX(-18deg) translateX(-130%); }
 .wipe.go::before { animation: wipe .5s cubic-bezier(.7, 0, .2, 1); }
@@ -219,7 +222,7 @@ html.film-lock, html.film-lock body { overflow: hidden; height: 100%; overscroll
 .card.side.left { right: auto; left: 3vw; top: 74px; margin-top: 0; max-height: 62vh; }
 .card .k { font: 400 15px var(--sfx); letter-spacing: .14em; color: #d62a1e; }
 .card h2 { margin: 0 0 4px; font: 400 clamp(40px, 6vw, 72px)/.9 var(--brush); letter-spacing: 0; }
-.card p { margin: 0 0 10px; font-size: 12px; line-height: 1.55; }
+.card p { margin: 0 0 10px; font-size: 13px; line-height: 1.6; }
 .card .kk { font: 700 12px var(--mono); }
 .card .chips { display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0 12px; }
 .card .chips span { font: 700 10px var(--mono); background: #0f0d0b; color: #efe8d6; padding: 2px 8px; transform: skewX(-10deg); }

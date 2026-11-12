@@ -27,6 +27,28 @@ const CHAPTERS: { label: string; at: number }[] = [
 const win = (from: number, to?: number): { 'data-in': number; 'data-out'?: number } => ({ 'data-in': from, ...(to !== undefined ? { 'data-out': to } : {}) });
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const restBeats = SCRIPT.restBeat;
+/** Mouse and touch clicks should not leave a button focused, or Enter / Space would press it again. */
+const blurAfter = (e: { currentTarget: HTMLElement }) => e.currentTarget.blur();
+
+/** Reading pauses. The film holds here at 1x (it never slows down), long enough to read what is on screen. */
+type Hold = { tau: number; sec: number };
+const readSec = (chars: number) => clamp(2 + chars * 0.04, 2.4, 16);
+const HOLDS: Hold[] = [
+  { tau: M.run1 + 1.9, sec: 2.2 },
+  { tau: M.run1 + 4.7, sec: 2.2 },
+  { tau: M.run1 + 7.6, sec: 2.6 },
+  ...featured.map((f): Hold => ({
+    tau: (f.id === 'flame' ? M.flameDie : f.id === 'sanctum' ? M.sanctumDie : M.humDie) + 1.6,
+    sec: readSec(f.kicker.length + f.blurb.length + f.stack.join(' ').length),
+  })),
+  { tau: M.sparDie + 1.0, sec: readSec(otherWork.map((w) => w.name + w.tags.join(' ')).join(' ').length) },
+  { tau: M.kata + 1.2, sec: readSec(toolbox.flatMap((g) => g.items.map((i) => i.name + i.note)).join(' ').length) },
+  ...background.map((b, i): Hold => {
+    const len = `${b.title}, ${b.place}. ${b.note}`.length;
+    return { tau: restBeats[i] + 0.3 + len / 38 + 0.25, sec: readSec(len) };
+  }),
+].sort((a, b) => a.tau - b.tau);
+const HOLD_EPS = HOLDS.map((h) => toEps(h.tau));
 
 /** When each flagship card is on screen (script seconds). */
 const CARD_WINDOW: Record<string, [number, number]> = {
@@ -42,9 +64,9 @@ const ScrollStage = ({ onRead }: Props) => {
   const cv = useRef<HTMLCanvasElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const hint = useRef<HTMLDivElement>(null);
-  const statusEl = useRef<HTMLDivElement>(null);
+  const statusEl = useRef<HTMLButtonElement>(null);
   const wipe = useRef<HTMLDivElement>(null);
-  const api = useRef<{ jump: (tau: number) => void; toggle: () => void }>({ jump: () => undefined, toggle: () => undefined });
+  const api = useRef<{ jump: (tau: number) => void; toggle: () => void; cont: () => void }>({ jump: () => undefined, toggle: () => undefined, cont: () => undefined });
   const [snd, setSnd] = useState(false);
   const [auto, setAuto] = useState(false);
 
@@ -106,6 +128,9 @@ const ScrollStage = ({ onRead }: Props) => {
     let timedUntil = 0;
     const kb = { down: false, up: false };
     let lastStatus = '';
+    let hold = -1; // index of the reading pause we are sitting in, or -1
+    let holdStart = 0;
+    const released = new Set<number>();
 
     const chapIndex = () => {
       let idx = 0;
@@ -117,6 +142,8 @@ const ScrollStage = ({ onRead }: Props) => {
       prevCur = cur;
       autoPlay = false;
       setAuto(false);
+      hold = -1;
+      released.clear();
       const w = wipe.current;
       if (w) {
         w.classList.remove('go');
@@ -130,7 +157,13 @@ const ScrollStage = ({ onRead }: Props) => {
       autoPlay = !autoPlay;
       setAuto(autoPlay);
     };
-    api.current = { jump: jumpTo, toggle: toggleAuto };
+    const releaseHold = () => {
+      if (hold === -1) return false;
+      released.add(hold);
+      hold = -1;
+      return true;
+    };
+    api.current = { jump: jumpTo, toggle: toggleAuto, cont: () => { if (!releaseHold()) toggleAuto(); } };
 
     const dialogOpen = () => !!document.querySelector('[role="dialog"]');
     const typing = (el: EventTarget | null) => {
@@ -152,6 +185,11 @@ const ScrollStage = ({ onRead }: Props) => {
       else if (k === 'ArrowLeft') { e.preventDefault(); if (!e.repeat) goChapter(chapIndex() - 1); }
       else if (k === 'Home') { e.preventDefault(); goChapter(0); }
       else if (k === 'End') { e.preventDefault(); goChapter(CHAPTERS.length - 1); }
+      else if (k === 'Enter') {
+        if ((e.target as HTMLElement | null)?.closest?.('a,button')) return;
+        e.preventDefault();
+        releaseHold();
+      }
       else if (k === ' ') {
         if ((e.target as HTMLElement | null)?.closest?.('a,button')) return;
         e.preventDefault();
@@ -236,7 +274,24 @@ const ScrollStage = ({ onRead }: Props) => {
       const dir = kbDir !== 0 ? kbDir : timedDir !== 0 ? timedDir : autoPlay ? 1 : 0;
 
       prevCur = cur;
-      if (dir !== 0) cur = clamp(cur + dir * dt, 0, TOTAL_EPS);
+      // reading pauses: forward motion stops at a hold until its reading time is up
+      for (const i of Array.from(released)) if (cur < HOLD_EPS[i] - 0.3) released.delete(i);
+      let next = dir !== 0 ? clamp(cur + dir * dt, 0, TOTAL_EPS) : cur;
+      if (hold === -1 && dir > 0) {
+        for (let i = 0; i < HOLDS.length; i++) {
+          if (!released.has(i) && cur < HOLD_EPS[i] - 1e-6 && next >= HOLD_EPS[i]) { hold = i; holdStart = now; next = HOLD_EPS[i]; break; }
+        }
+      }
+      let remaining = 0;
+      if (hold !== -1) {
+        if (dir < 0) { hold = -1; }
+        else {
+          next = HOLD_EPS[hold];
+          remaining = HOLDS[hold].sec - (now - holdStart) / 1000;
+          if (remaining <= 0 && dir > 0) { released.add(hold); hold = -1; next = clamp(cur + dt, 0, TOTAL_EPS); }
+        }
+      }
+      cur = next;
       if (cur >= TOTAL_EPS && autoPlay) { autoPlay = false; setAuto(false); }
 
       const info = renderFrame(ctx, canvas, cur, scale, now / 1000, view);
@@ -270,12 +325,18 @@ const ScrollStage = ({ onRead }: Props) => {
       }
       if (bar.current) bar.current.style.transform = `scaleX(${clamp(cur / TOTAL_EPS, 0, 1)})`;
       if (hint.current) hint.current.style.opacity = tau < M.run1 + 0.6 ? '1' : '0';
-      const status = cur >= TOTAL_EPS ? 'THE END' : dir > 0 ? '▶ PLAYING  1×' : dir < 0 ? '◀ REWIND  1×' : '❚❚ PAUSED';
+      const reading = hold !== -1;
+      const status = cur >= TOTAL_EPS
+        ? 'THE END'
+        : reading
+          ? remaining > 0 ? `❚❚ READ · ${Math.ceil(remaining)}s · TAP TO CONTINUE` : '▶ READY · PRESS ↓ OR TAP'
+          : dir > 0 ? '▶ PLAYING  1×' : dir < 0 ? '◀ REWIND  1×' : '❚❚ PAUSED';
       if (status !== lastStatus && statusEl.current) {
         lastStatus = status;
         statusEl.current.textContent = status;
-        statusEl.current.dataset.state = dir > 0 ? 'play' : dir < 0 ? 'back' : 'pause';
+        statusEl.current.dataset.state = reading ? 'read' : dir > 0 ? 'play' : dir < 0 ? 'back' : 'pause';
       }
+      if (reading !== root.classList.contains('reading')) root.classList.toggle('reading', reading);
     };
     raf = requestAnimationFrame(frame);
 
@@ -305,16 +366,16 @@ const ScrollStage = ({ onRead }: Props) => {
         {/* ---------- HUD ---------- */}
         <div className="hud-top">
           <div className="hud-name">TEJAS</div>
-          <button type="button" className="mini" onClick={() => api.current.toggle()} aria-pressed={auto}>{auto ? 'PAUSE' : 'PLAY'}</button>
-          <button type="button" className="mini" onClick={onRead}>READ MODE</button>
-          <button type="button" className="mini" onClick={toggleSound} aria-pressed={snd}>SOUND: {snd ? 'ON' : 'OFF'}</button>
+          <button type="button" className="mini" onClick={(e) => { api.current.toggle(); blurAfter(e); }} aria-pressed={auto}>{auto ? 'PAUSE' : 'PLAY'}</button>
+          <button type="button" className="mini" onClick={(e) => { blurAfter(e); onRead(); }}>READ MODE</button>
+          <button type="button" className="mini" onClick={(e) => { toggleSound(); blurAfter(e); }} aria-pressed={snd}>SOUND: {snd ? 'ON' : 'OFF'}</button>
         </div>
         <nav className="chap" aria-label="Chapters">
           {CHAPTERS.map((c, i) => (
-            <button key={c.label} type="button" data-chap={i} onClick={() => api.current.jump(c.at)}>{c.label}</button>
+            <button key={c.label} type="button" data-chap={i} onClick={(e) => { api.current.jump(c.at); blurAfter(e); }}>{c.label}</button>
           ))}
         </nav>
-        <div ref={statusEl} className="status" aria-live="off" data-state="pause">❚❚ PAUSED</div>
+        <button type="button" ref={statusEl} className="status" aria-live="off" data-state="pause" onClick={(e) => { api.current.cont(); blurAfter(e); }}>❚❚ PAUSED</button>
         <div className="progress" aria-hidden="true"><div ref={bar} /></div>
         <div className="skills" aria-label="Techniques collected">
           <b>TECHNIQUES</b>
@@ -325,8 +386,8 @@ const ScrollStage = ({ onRead }: Props) => {
 
         {/* ---------- scene 0: gate ---------- */}
         <div className="cue" ref={hint} aria-hidden="true">
-          <span className="kb-only">HOLD <kbd>↓</kbd> OR SCROLL TO PLAY · ALWAYS 1× · <kbd>↑</kbd> REWIND · <kbd>SPACE</kbd> PLAY / PAUSE · <kbd>←</kbd><kbd>→</kbd> CHAPTERS</span>
-          <span className="touch-only">SWIPE UP OR TAP PLAY · SWIPE DOWN TO REWIND · ALWAYS 1× · TAP A CHAPTER TO SKIP</span>
+          <span className="kb-only">HOLD <kbd>↓</kbd> OR SCROLL TO PLAY · ALWAYS 1× · <kbd>↑</kbd> REWIND · <kbd>SPACE</kbd> PLAY / PAUSE · <kbd>ENTER</kbd> CONTINUE · <kbd>←</kbd><kbd>→</kbd> CHAPTERS</span>
+          <span className="touch-only">SWIPE UP OR TAP PLAY · SWIPE DOWN TO REWIND · ALWAYS 1× · IT PAUSES SO YOU CAN READ · TAP A CHAPTER TO SKIP</span>
         </div>
 
         {/* ---------- captions ---------- */}

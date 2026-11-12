@@ -51,6 +51,23 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
           c.fill();
         }
       }
+    } else if (s.kind === 'sonic' && age < 0.9) {
+      const u = age / 0.9;
+      c.shadowColor = '#ff7aa8'; c.shadowBlur = q.k * 22;
+      for (let k = 0; k < 6; k++) {
+        const r = 40 + u * 360 + k * 38;
+        c.strokeStyle = k === 0 ? `rgba(255,255,255,${1 - u})` : `rgba(255,70,130,${(1 - u) * (1 - k * 0.12)})`;
+        c.lineWidth = 11 - k;
+        c.beginPath(); c.arc(px, py - 52, r, -0.85, 0.85); c.stroke();
+      }
+      c.shadowBlur = 0;
+      c.font = '400 40px sans-serif';
+      for (let k = 0; k < 7; k++) {
+        const nx = px + 60 + u * 420 + k * 26;
+        const ny = py - 54 + Math.sin(u * 12 + k * 1.3) * 46;
+        c.fillStyle = `rgba(255,${(120 + k * 14) | 0},170,${1 - u})`;
+        c.fillText(k % 2 ? '♪' : '♫', nx, ny);
+      }
     } else if (s.kind === 'leap' && age < 0.9) {
       const u = age / 0.9;
       for (let k = 0; k < 16; k++) {
@@ -160,12 +177,12 @@ export function drawLights(c: C2, eps: number, tau: number, P: Pal, tip: [number
   }
   // boss auras
   for (const f of SCRIPT.foes) {
-    if ((f.kind !== 'flame' && f.kind !== 'sanctum') || tau < f.spawn || tau > f.hits[f.hits.length - 1].t) continue;
+    if ((f.kind !== 'flame' && f.kind !== 'sanctum' && f.kind !== 'hum') || tau < f.spawn || tau > f.hits[f.hits.length - 1].t) continue;
     const [bx, by] = foeCenter(f);
     const fire = f.kind === 'flame';
     const r = (fire ? 250 : 270) + Math.sin(eps * 4) * 12;
     const g = c.createRadialGradient(bx, by, 10, bx, by, r);
-    g.addColorStop(0, fire ? 'rgba(255,140,30,.42)' : 'rgba(62,242,208,.3)');
+    g.addColorStop(0, fire ? 'rgba(255,140,30,.42)' : f.kind === 'hum' ? 'rgba(255,50,120,.34)' : 'rgba(62,242,208,.3)');
     g.addColorStop(1, 'rgba(0,0,0,0)');
     c.fillStyle = g;
     c.fillRect(bx - r, by - r, r * 2, r * 2);

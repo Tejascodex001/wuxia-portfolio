@@ -1,42 +1,52 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LANDSCAPE, PORTRAIT, renderFrame, type View } from '@/game/render';
-import { q } from '@/game/util';
 import { sound } from '@/game/audio';
-import { H, SCRIPT, TOTAL_EPS, W, toEps } from '@/game/script';
+import { q } from '@/game/util';
+import { H, SCRIPT, TOTAL_EPS, toEps } from '@/game/script';
 import { background, featured, otherWork, profile, toolbox } from '@/data/content';
 import { toast } from '@/components/ui/sonner';
 
 const M = SCRIPT.marks;
-const SKILLS = ['Rust', 'C++', 'Python', 'Dart', 'PyTorch', 'Candle', 'CUDA', 'Flutter'];
+const SKILLS = ['Rust', 'C++', 'Python', 'Dart', 'PyTorch', 'Candle', 'Flutter', 'Kotlin', 'CUDA'];
 const UNLOCK: Record<string, number> = {};
 for (const u of SCRIPT.unlocks) UNLOCK[u.skill] = u.t;
 
+/** Checkpoints. These are the only way to skip ahead. */
 const CHAPTERS: { label: string; at: number }[] = [
   { label: 'Gate', at: 0 },
   { label: 'Bugs', at: M.run1 + 0.4 },
   { label: 'Flame', at: M.toFlame + 1 },
   { label: 'Sanctum', at: M.toSanctum + 1 },
+  { label: 'Hum', at: M.toHum + 1 },
   { label: 'Sparring', at: M.toSpar + 0.6 },
   { label: 'Moves', at: M.kata },
   { label: 'Rest', at: M.rest },
   { label: 'Save', at: M.save },
 ];
 
-/** Window style: the element fades in at `from` and out at `to` (script seconds). */
 const win = (from: number, to?: number): { 'data-in': number; 'data-out'?: number } => ({ 'data-in': from, ...(to !== undefined ? { 'data-out': to } : {}) });
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-
 const restBeats = SCRIPT.restBeat;
+
+/** When each flagship card is on screen (script seconds). */
+const CARD_WINDOW: Record<string, [number, number]> = {
+  flame: [M.flameDie + 0.9, M.toSanctum + 1.5],
+  sanctum: [M.sanctumDie + 0.9, M.toHum + 1.5],
+  hum: [M.humDie + 0.9, M.toSpar + 0.6],
+};
 
 type Props = { onRead: () => void };
 
 const ScrollStage = ({ onRead }: Props) => {
-  const section = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   const hint = useRef<HTMLDivElement>(null);
+  const statusEl = useRef<HTMLDivElement>(null);
+  const wipe = useRef<HTMLDivElement>(null);
+  const api = useRef<{ jump: (tau: number) => void; toggle: () => void }>({ jump: () => undefined, toggle: () => undefined });
   const [snd, setSnd] = useState(false);
+  const [auto, setAuto] = useState(false);
 
   const toggleSound = () => {
     const next = !sound.enabled;
@@ -55,15 +65,13 @@ const ScrollStage = ({ onRead }: Props) => {
 
   useEffect(() => {
     const canvas = cv.current;
-    const sec = section.current;
     const root = stage.current;
-    if (!canvas || !sec || !root) return;
+    if (!canvas || !root) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const html = document.documentElement;
-    const prevBehavior = html.style.scrollBehavior;
-    html.style.scrollBehavior = 'auto';
+    // The film owns the screen: no page scrolling, input only chooses a direction.
+    document.documentElement.classList.add('film-lock');
 
     const wins = Array.from(root.querySelectorAll<HTMLElement>('[data-in]'));
     const typed = Array.from(root.querySelectorAll<HTMLElement>('[data-typed]'));
@@ -89,71 +97,118 @@ const ScrollStage = ({ onRead }: Props) => {
     ro.observe(canvas);
     resize();
 
-    const maxScroll = () => Math.max(1, sec.offsetHeight - window.innerHeight);
-    const scrollTop = () => clamp(-sec.getBoundingClientRect().top, 0, maxScroll());
-    const epsToY = (eps: number) => sec.offsetTop + (eps / TOTAL_EPS) * maxScroll();
+    /* ================= the playhead: always exactly 1x ================= */
+    let cur = 0;
+    let prevCur = 0;
+    let lastTau = 0;
+    let autoPlay = false;
+    let timedDir = 0; // wheel / touch intent
+    let timedUntil = 0;
+    const kb = { down: false, up: false };
+    let lastStatus = '';
 
-    let cur = (scrollTop() / maxScroll()) * TOTAL_EPS;
-    let prevCur = cur;
-    let last = performance.now();
-    let raf = 0;
-    let lastChap = -1;
-    const held = { down: false, up: false, t: 0 };
+    const chapIndex = () => {
+      let idx = 0;
+      CHAPTERS.forEach((c, i) => { if (lastTau >= c.at - 0.2) idx = i; });
+      return idx;
+    };
+    const jumpTo = (tau: number) => {
+      cur = toEps(tau);
+      prevCur = cur;
+      autoPlay = false;
+      setAuto(false);
+      const w = wipe.current;
+      if (w) {
+        w.classList.remove('go');
+        void w.offsetWidth;
+        w.classList.add('go');
+      }
+    };
+    const goChapter = (i: number) => jumpTo(CHAPTERS[clamp(i, 0, CHAPTERS.length - 1)].at);
+    const toggleAuto = () => {
+      if (cur >= TOTAL_EPS - 0.01) jumpTo(0);
+      autoPlay = !autoPlay;
+      setAuto(autoPlay);
+    };
+    api.current = { jump: jumpTo, toggle: toggleAuto };
 
-    /* ----- keyboard: arrows run the film ----- */
+    const dialogOpen = () => !!document.querySelector('[role="dialog"]');
     const typing = (el: EventTarget | null) => {
       const e = el as HTMLElement | null;
       return !!e && (e.tagName === 'INPUT' || e.tagName === 'TEXTAREA' || e.isContentEditable);
     };
-    const dialogOpen = () => !!document.querySelector('[role="dialog"]');
-    const chapIndex = () => {
-      const tauNow = lastTau;
-      let idx = 0;
-      CHAPTERS.forEach((c, i) => { if (tauNow >= c.at - 0.2) idx = i; });
-      return idx;
+    // a card with more content than fits may scroll on its own
+    const inScrollableCard = (el: EventTarget | null) => {
+      const card = (el as HTMLElement | null)?.closest?.('.card') as HTMLElement | null;
+      return !!card && card.scrollHeight > card.clientHeight + 2;
     };
-    const goChapter = (i: number) => {
-      const c = CHAPTERS[clamp(i, 0, CHAPTERS.length - 1)];
-      window.scrollTo({ top: epsToY(toEps(c.at)), behavior: 'smooth' });
-    };
-    let lastTau = 0;
+
     const onKey = (e: KeyboardEvent) => {
       if (typing(e.target) || dialogOpen() || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key;
-      if (k === 'ArrowDown' || k === 's' || k === 'S') {
+      if (k === 'ArrowDown' || k === 's' || k === 'S') { e.preventDefault(); kb.down = true; }
+      else if (k === 'ArrowUp' || k === 'w' || k === 'W') { e.preventDefault(); kb.up = true; }
+      else if (k === 'ArrowRight') { e.preventDefault(); if (!e.repeat) goChapter(chapIndex() + 1); }
+      else if (k === 'ArrowLeft') { e.preventDefault(); if (!e.repeat) goChapter(chapIndex() - 1); }
+      else if (k === 'Home') { e.preventDefault(); goChapter(0); }
+      else if (k === 'End') { e.preventDefault(); goChapter(CHAPTERS.length - 1); }
+      else if (k === ' ') {
+        if ((e.target as HTMLElement | null)?.closest?.('a,button')) return;
         e.preventDefault();
-        if (!held.down) { held.down = true; held.t = performance.now(); window.scrollBy(0, 70); }
-      } else if (k === 'ArrowUp' || k === 'w' || k === 'W') {
-        e.preventDefault();
-        if (!held.up) { held.up = true; held.t = performance.now(); window.scrollBy(0, -70); }
-      } else if (k === 'ArrowRight') {
-        e.preventDefault();
-        if (!e.repeat) goChapter(chapIndex() + 1);
-      } else if (k === 'ArrowLeft') {
-        e.preventDefault();
-        if (!e.repeat) goChapter(chapIndex() - 1);
-      } else if (k === 'Home') {
-        e.preventDefault();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (k === 'End') {
-        e.preventDefault();
-        window.scrollTo({ top: sec.offsetTop + maxScroll(), behavior: 'smooth' });
-      } else if (k === ' ' || k === 'PageDown') {
-        e.preventDefault();
-        window.scrollBy({ top: window.innerHeight * 0.7 * (e.shiftKey ? -1 : 1), behavior: 'smooth' });
-      } else if (k === 'PageUp') {
-        e.preventDefault();
-        window.scrollBy({ top: -window.innerHeight * 0.7, behavior: 'smooth' });
+        if (!e.repeat) toggleAuto();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') held.down = false;
-      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') held.up = false;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') kb.down = false;
+      if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') kb.up = false;
     };
-    const onBlur = () => { held.down = held.up = false; };
+    const onBlur = () => { kb.down = kb.up = false; timedDir = 0; };
+
+    const onWheel = (e: WheelEvent) => {
+      if (dialogOpen() || inScrollableCard(e.target)) return;
+      e.preventDefault();
+      const d = e.deltaY || e.deltaX;
+      if (Math.abs(d) < 3) return; // ignore the tail of trackpad inertia
+      timedDir = d > 0 ? 1 : -1;
+      timedUntil = performance.now() + 170;
+    };
+
+    let touching = false;
+    let ty = 0;
+    let tDir = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      if (inScrollableCard(e.target)) { touching = false; return; }
+      touching = true;
+      ty = e.touches[0].clientY;
+      tDir = 0;
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!touching) return;
+      e.preventDefault();
+      const y = e.touches[0].clientY;
+      const dy = y - ty;
+      if (Math.abs(dy) > 4) {
+        tDir = dy < 0 ? 1 : -1; // swipe up plays, swipe down rewinds
+        ty = y;
+      }
+      if (tDir !== 0) { timedDir = tDir; timedUntil = Infinity; }
+    };
+    const onTouchEnd = () => {
+      if (!touching) return;
+      touching = false;
+      if (tDir !== 0) { timedDir = tDir; timedUntil = performance.now() + 300; }
+    };
+
     window.addEventListener('keydown', onKey);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('blur', onBlur);
+    window.addEventListener('wheel', onWheel, { passive: false });
+    root.addEventListener('touchstart', onTouchStart, { passive: true });
+    root.addEventListener('touchmove', onTouchMove, { passive: false });
+    root.addEventListener('touchend', onTouchEnd);
+    root.addEventListener('touchcancel', onTouchEnd);
+    const onCanvasClick = () => toggleAuto();
+    canvas.addEventListener('click', onCanvasClick);
 
     const copy = root.querySelector<HTMLElement>('[data-copy]');
     const onCopy = async () => {
@@ -166,26 +221,26 @@ const ScrollStage = ({ onRead }: Props) => {
     };
     copy?.addEventListener('click', onCopy);
 
+    let last = performance.now();
+    let raf = 0;
+    let lastChap = -1;
+
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
-      // held arrow keys keep the hero running (accelerates the longer you hold)
-      const dir = (held.down ? 1 : 0) - (held.up ? 1 : 0);
-      if (dir !== 0) {
-        const heldFor = (now - held.t) / 1000;
-        const speed = 260 + Math.min(1, heldFor / 0.9) * 700;
-        window.scrollBy(0, dir * speed * dt);
-      }
+      // direction only, never speed: every frame advances by exactly dt.
+      if (timedDir !== 0 && now >= timedUntil) timedDir = 0;
+      const kbDir = (kb.down ? 1 : 0) - (kb.up ? 1 : 0);
+      const dir = kbDir !== 0 ? kbDir : timedDir !== 0 ? timedDir : autoPlay ? 1 : 0;
 
-      const tgt = (scrollTop() / maxScroll()) * TOTAL_EPS;
-      cur += (tgt - cur) * (1 - Math.exp(-dt * 11));
-      if (Math.abs(tgt - cur) < 1e-4) cur = tgt;
+      prevCur = cur;
+      if (dir !== 0) cur = clamp(cur + dir * dt, 0, TOTAL_EPS);
+      if (cur >= TOTAL_EPS && autoPlay) { autoPlay = false; setAuto(false); }
 
       const info = renderFrame(ctx, canvas, cur, scale, now / 1000, view);
-      sound.update(prevCur, cur, info.tau, (cur - prevCur) / Math.max(dt, 0.001) * 0.2);
-      prevCur = cur;
+      sound.update(prevCur, cur, info.tau, dir);
       lastTau = info.tau;
       const g = info.glitch;
       canvas.style.filter = g > 0.05 ? `drop-shadow(${(5 * g).toFixed(1)}px 0 0 rgba(255,42,64,.75)) drop-shadow(${(-5 * g).toFixed(1)}px 0 0 rgba(0,216,255,.75))` : '';
@@ -215,46 +270,51 @@ const ScrollStage = ({ onRead }: Props) => {
       }
       if (bar.current) bar.current.style.transform = `scaleX(${clamp(cur / TOTAL_EPS, 0, 1)})`;
       if (hint.current) hint.current.style.opacity = tau < M.run1 + 0.6 ? '1' : '0';
+      const status = cur >= TOTAL_EPS ? 'THE END' : dir > 0 ? '▶ PLAYING  1×' : dir < 0 ? '◀ REWIND  1×' : '❚❚ PAUSED';
+      if (status !== lastStatus && statusEl.current) {
+        lastStatus = status;
+        statusEl.current.textContent = status;
+        statusEl.current.dataset.state = dir > 0 ? 'play' : dir < 0 ? 'back' : 'pause';
+      }
     };
     raf = requestAnimationFrame(frame);
 
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      document.documentElement.classList.remove('film-lock');
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
+      window.removeEventListener('wheel', onWheel);
+      root.removeEventListener('touchstart', onTouchStart);
+      root.removeEventListener('touchmove', onTouchMove);
+      root.removeEventListener('touchend', onTouchEnd);
+      root.removeEventListener('touchcancel', onTouchEnd);
+      canvas.removeEventListener('click', onCanvasClick);
       copy?.removeEventListener('click', onCopy);
-      html.style.scrollBehavior = prevBehavior;
     };
   }, []);
 
-  const go = (at: number) => {
-    const sec = section.current;
-    if (!sec) return;
-    const max = sec.offsetHeight - window.innerHeight;
-    window.scrollTo({ top: sec.offsetTop + (toEps(at) / TOTAL_EPS) * max, behavior: 'smooth' });
-  };
-
-  const filmHeight: CSSProperties = { height: `${Math.round(TOTAL_EPS * 13)}vh` };
-  const F = featured;
-
   return (
-    <section ref={section} className="film" style={filmHeight} aria-label="Interactive scroll story">
+    <section className="film" aria-label="Interactive story. Hold the down arrow, scroll or swipe up to play. It always plays at normal speed.">
       <div ref={stage} className="stage">
         <canvas ref={cv} className="stage-canvas" aria-hidden="true" />
+        <div ref={wipe} className="wipe" aria-hidden="true" />
 
         {/* ---------- HUD ---------- */}
         <div className="hud-top">
           <div className="hud-name">TEJAS</div>
+          <button type="button" className="mini" onClick={() => api.current.toggle()} aria-pressed={auto}>{auto ? 'PAUSE' : 'PLAY'}</button>
           <button type="button" className="mini" onClick={onRead}>READ MODE</button>
           <button type="button" className="mini" onClick={toggleSound} aria-pressed={snd}>SOUND: {snd ? 'ON' : 'OFF'}</button>
         </div>
         <nav className="chap" aria-label="Chapters">
           {CHAPTERS.map((c, i) => (
-            <button key={c.label} type="button" data-chap={i} onClick={() => go(c.at)}>{c.label}</button>
+            <button key={c.label} type="button" data-chap={i} onClick={() => api.current.jump(c.at)}>{c.label}</button>
           ))}
         </nav>
+        <div ref={statusEl} className="status" aria-live="off" data-state="pause">❚❚ PAUSED</div>
         <div className="progress" aria-hidden="true"><div ref={bar} /></div>
         <div className="skills" aria-label="Techniques collected">
           <b>TECHNIQUES</b>
@@ -265,8 +325,8 @@ const ScrollStage = ({ onRead }: Props) => {
 
         {/* ---------- scene 0: gate ---------- */}
         <div className="cue" ref={hint} aria-hidden="true">
-          <span className="kb-only">SCROLL OR PRESS <kbd>↓</kbd> TO RUN · HOLD TO KEEP RUNNING · <kbd>↑</kbd> REWIND · <kbd>←</kbd><kbd>→</kbd> CHAPTERS</span>
-          <span className="touch-only">SWIPE UP TO RUN · SWIPE DOWN TO REWIND · TAP A CHAPTER TO JUMP</span>
+          <span className="kb-only">HOLD <kbd>↓</kbd> OR SCROLL TO PLAY · ALWAYS 1× · <kbd>↑</kbd> REWIND · <kbd>SPACE</kbd> PLAY / PAUSE · <kbd>←</kbd><kbd>→</kbd> CHAPTERS</span>
+          <span className="touch-only">SWIPE UP OR TAP PLAY · SWIPE DOWN TO REWIND · ALWAYS 1× · TAP A CHAPTER TO SKIP</span>
         </div>
 
         {/* ---------- captions ---------- */}
@@ -274,13 +334,12 @@ const ScrollStage = ({ onRead }: Props) => {
         <div className="cap" {...win(M.run1 + 3.8, M.run1 + 6.4)} data-slide="1">MAINTAINER OF <span>RTENSORLABS</span></div>
         <div className="cap" {...win(M.run1 + 6.6, M.run1End + 0.4)} data-slide="1">I BUILD <span>LANGUAGE MODELS</span> FROM SCRATCH.</div>
 
-        {/* ---------- boss cards ---------- */}
-        {F.map((f, i) => {
-          const from = i === 0 ? M.flameDie + 0.9 : M.sanctumDie + 0.9;
-          const to = i === 0 ? M.toSanctum + 1.5 : M.toSpar + 0.6;
+        {/* ---------- flagship cards ---------- */}
+        {featured.map((f, i) => {
+          const [from, to] = CARD_WINDOW[f.id];
           return (
             <article key={f.id} className="card side" {...win(from, to)} data-slide="1">
-              <div className="k">BOSS {String(i + 1).padStart(2, '0')} · DEFEATED</div>
+              <div className="k">FLAGSHIP {String(i + 1).padStart(2, '0')} · DEFEATED</div>
               <h2>{f.name}</h2>
               <p className="kk">{f.kicker}</p>
               <p>{f.blurb}</p>

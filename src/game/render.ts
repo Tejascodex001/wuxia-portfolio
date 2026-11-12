@@ -4,7 +4,7 @@ import {
   type Foe, type Hit,
 } from './script';
 import { amb, q, clamp, css, ease, flames, fr, lerp, mixc, FIRE, GOLD, RED, type C2, type Pal, type RGB } from './util';
-import { drawMini, drawOnionKeeper, drawTransformer, foeCenter } from './bosses';
+import { drawHumBoss, drawMini, drawOnionKeeper, drawTransformer, foeCenter } from './bosses';
 import { drawChapterCard, drawHitExtras, drawLights, drawSpecialBanner, drawSpecials, flashAmt, zoomPunch } from './fx';
 
 /* ---------- palette ---------- */
@@ -278,6 +278,10 @@ function drawFoe(c: CanvasRenderingContext2D, f: Foe, tau: number, eps: number, 
     c.restore();
     drawOnionKeeper(c, f, tau, eps, P, flash);
     return;
+  } else if (f.kind === 'hum') {
+    c.restore();
+    drawHumBoss(c, f, tau, eps, P, flash);
+    return;
   }
   c.restore();
 }
@@ -310,6 +314,23 @@ function drawProjs(c: CanvasRenderingContext2D, tau: number, P: Pal) {
         c.strokeText('!', p.x0 + 20, GY - 190);
         c.fillText('!', p.x0 + 20, GY - 190);
         c.textAlign = 'left';
+      }
+    } else if (p.kind === 'sound') {
+      const y = GY - 40;
+      c.save();
+      c.translate(x, y);
+      c.lineCap = 'round';
+      for (let k = 0; k < 3; k++) {
+        c.strokeStyle = k === 0 ? '#ff7aa8' : k === 1 ? '#e0245e' : css(P.ink);
+        c.lineWidth = 9 - k * 2.5;
+        c.beginPath(); c.arc(30 + k * 6, 0, 22 + k * 14, Math.PI - 0.95, Math.PI + 0.95); c.stroke();
+      }
+      c.fillStyle = '#e0245e'; c.font = '400 34px sans-serif'; c.fillText('♪', -34, 10);
+      c.restore();
+      if (tau - p.t0 < 0.4) {
+        c.font = '400 54px Bangers,Impact,sans-serif'; c.textAlign = 'center'; c.lineWidth = 6;
+        c.strokeStyle = css(P.ink); c.fillStyle = '#e0245e';
+        c.strokeText('!', p.x0 + 10, GY - 210); c.fillText('!', p.x0 + 10, GY - 210); c.textAlign = 'left';
       }
     } else {
       const y = GY - 62 - Math.sin(u * Math.PI) * 60;
@@ -659,7 +680,7 @@ function drawPops(c: CanvasRenderingContext2D, eps: number, P: Pal) {
 
 /* ---------- boss bar (HUD) ---------- */
 function drawBossBar(c: CanvasRenderingContext2D, tau: number, P: Pal, vw: number) {
-  const boss = SCRIPT.foes.find((f) => (f.kind === 'flame' || f.kind === 'sanctum') && tau >= f.spawn && tau <= f.hits[f.hits.length - 1].t + 0.9);
+  const boss = SCRIPT.foes.find((f) => (f.kind === 'flame' || f.kind === 'sanctum' || f.kind === 'hum') && tau >= f.spawn && tau <= f.hits[f.hits.length - 1].t + 0.9);
   if (!boss) return;
   const total = boss.hits.length;
   const done = boss.hits.filter((h) => h.t <= tau).length;

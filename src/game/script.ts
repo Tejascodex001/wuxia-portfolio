@@ -15,9 +15,9 @@ export const PLAYER_SX = 380; // where the hero sits on screen
 export type Step = 1 | 2 | 3;
 export type HitFx = 'n' | 'clang' | 'break' | 'impact' | 'final';
 export type Hit = { t: number; step: Step; fx: HitFx; eps: number; id: number };
-export type FoeKind = 'walk' | 'fly' | 'flame' | 'sanctum';
-export type Look = 'guard' | 'wall' | 'eye' | 'spike' | 'immune';
-export type SpecialKind = 'whirl' | 'wave' | 'thunder' | 'heaven' | 'leap' | 'decrypt';
+export type FoeKind = 'walk' | 'fly' | 'flame' | 'sanctum' | 'hum';
+export type Look = 'guard' | 'wall' | 'eye' | 'spike' | 'immune' | 'indic' | 'graph';
+export type SpecialKind = 'whirl' | 'wave' | 'thunder' | 'heaven' | 'leap' | 'decrypt' | 'sonic';
 export type Special = { t: number; kind: SpecialKind; name: string; zh: string; x: number; to?: number; t1?: number };
 export type Chapter = { t: number; name: string; zh: string };
 export type Foe = {
@@ -36,7 +36,7 @@ export type Foe = {
 };
 export type Slash = { t: number; step: Step };
 export type Jump = { t: number; dur: number; h: number };
-export type Proj = { t0: number; t1: number; x0: number; x1: number; kind: 'wave' | 'orb'; parry: boolean; n: number };
+export type Proj = { t0: number; t1: number; x0: number; x1: number; kind: 'wave' | 'orb' | 'sound'; parry: boolean; n: number };
 
 export const DUR: Record<Step, number> = { 1: 0.26, 2: 0.26, 3: 0.42 };
 const HITAT: Record<Step, number> = { 1: 0.09, 2: 0.09, 3: 0.17 };
@@ -51,7 +51,7 @@ function build() {
   const projs: Proj[] = [];
   const marks: Mark = {};
   const unlocks: { skill: string; t: number }[] = [];
-  const gates: { x: number; name: string; zh: string; id: 'flame' | 'sanctum' }[] = [];
+  const gates: { x: number; name: string; zh: string; id: 'flame' | 'sanctum' | 'hum' }[] = [];
   const sits: { from: number; to: number }[] = [];
   const specials: Special[] = [];
   const chapters: Chapter[] = [];
@@ -204,7 +204,7 @@ function build() {
   chapter('BOSS 02 · SANCTUM', '盾', t + 0.6);
   const SB = foe({
     id: 'sanctum', kind: 'sanctum', label: 'SANCTUM', x: gS + 560, lift: 0, spawn: t, hp: 9, scale: 1.6,
-    skill: 'CUDA', stack: ['Rust', 'Flutter', 'Dart', 'E2E', 'Tor'],
+    skill: 'Flutter', stack: ['Rust', 'Flutter', 'Dart', 'E2E', 'Tor'],
   });
   run(SB.x - 330, 300);
   // three relay orbs, parried one by one
@@ -243,12 +243,61 @@ function build() {
   mark('sanctumDie');
   idle(2.2);
 
+  /* ---------- 3b. HUM (night) ---------- */
+  mark('toHum');
+  const gH = x + 600;
+  gates.push({ x: gH, name: 'HUM', zh: '音', id: 'hum' });
+  run(gH + 90, 300);
+  mark('humGate');
+  chapter('BOSS 03 · HUM', '音', t + 0.6);
+  const HB = foe({
+    id: 'hum', kind: 'hum', label: 'HUM', x: gH + 560, lift: 0, spawn: t, hp: 9, scale: 1.5,
+    skill: 'Kotlin', stack: ['Kotlin', 'Android', 'DMR', 'YT Music · Spotify'],
+  });
+  run(HB.x - 300, 300);
+  const soundAt = (arrive: number) => {
+    projs.push({ t0: arrive - 1.0, t1: arrive, x0: HB.x - 90, x1: x - 10, kind: 'sound', parry: false, n: projs.length });
+  };
+  const h1 = t + 0.5;
+  soundAt(h1 + 0.5);
+  t = h1 + 0.5 - 0.72 / 2;
+  jump();
+  t += 0.72;
+  idle(0.1);
+  run(HB.x - 150, 520);
+  slash(1, [HB]);
+  slash(2, [HB]);
+  slash(3, [HB]);
+  idle(0.5);
+  const h2 = t + 0.3;
+  soundAt(h2 + 0.5);
+  t = h2 + 0.5 - 0.72 / 2;
+  jump();
+  t += 0.72;
+  idle(0.1);
+  slash(1, [HB]);
+  slash(2, [HB]);
+  slash(3, [HB]);
+  idle(0.35);
+  slash(1, [HB]);
+  slash(2, [HB]);
+  slash(3, [HB], 'final');
+  HB.hits.forEach((h, i) => (h.fx = i === HB.hits.length - 1 ? 'final' : 'n'));
+  kill(HB);
+  special({ t: HB.hits[2].t - 0.12, kind: 'whirl', name: 'WHIRLWIND SLASH', zh: '旋风斩', x });
+  special({ t: HB.hits[5].t - 0.2, kind: 'sonic', name: 'SONIC BOOM', zh: '音波', x });
+  special({ t: HB.hits[8].t - 0.25, kind: 'heaven', name: 'HEAVEN CUT', zh: '天剑', x: HB.x });
+  mark('humDie');
+  idle(2.2);
+
   /* ---------- 4. Sparring hall ---------- */
   mark('toSpar');
   const sp: [string, string, Look][] = [
-    ['GuardLayer', 'Flutter', 'guard'],
+    ['GuardLayer', '', 'guard'],
     ['SmartGuard', '', 'wall'],
-    ['Vision Engine', '', 'eye'],
+    ['Indic Edge LM', '', 'indic'],
+    ['CodePulse', '', 'graph'],
+    ['Vision Engine', 'CUDA', 'eye'],
     ['Anomaly Detector', '', 'spike'],
     ['Auto-Immunity', '', 'immune'],
   ];
@@ -266,7 +315,7 @@ function build() {
     mark('spar' + i);
     if (i < minis.length - 1) idle(0.08);
   });
-  special({ t: minis[4].hits[0].t - 0.2, kind: 'thunder', name: 'THUNDER STRIKE', zh: '雷击', x: minis[4].x });
+  special({ t: minis[6].hits[0].t - 0.2, kind: 'thunder', name: 'THUNDER STRIKE', zh: '雷击', x: minis[6].x });
   mark('sparDie');
   idle(1.8);
 

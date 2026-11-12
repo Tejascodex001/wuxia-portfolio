@@ -182,13 +182,13 @@ class Sound {
     const forward = cur > prev && cur - prev < 0.9;
     const night = nightAmt(tau);
     const spd = Math.abs(playerSpeed(tau));
-    const boss = SCRIPT.foes.some((f) => (f.kind === 'flame' || f.kind === 'sanctum') && tau >= f.spawn && tau <= f.hits[f.hits.length - 1].t);
+    const boss = SCRIPT.foes.some((f) => (f.kind === 'flame' || f.kind === 'sanctum' || f.kind === 'hum') && tau >= f.spawn && tau <= f.hits[f.hits.length - 1].t);
 
     // hum breathes with the scene: darker at night, throbbing in boss fights
     this.humFilter?.frequency.setTargetAtTime(520 - night * 260 + (boss ? 160 : 0), now, 0.4);
     this.humGain?.gain.setTargetAtTime(boss ? 0.14 : 0.09, now, 0.5);
     this.lfoGain?.gain.setTargetAtTime(boss ? 0.07 : 0.035, now, 0.5);
-    const v = Math.min(1, Math.abs(scrollV) / 5);
+    const v = Math.min(1, Math.abs(scrollV)) * 0.55; // 1x playback: a steady breeze while moving
     this.windGain?.gain.setTargetAtTime(v * 0.16, now, 0.12);
     this.windFilter?.frequency.setTargetAtTime(380 + v * 1900, now, 0.15);
 

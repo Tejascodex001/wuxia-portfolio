@@ -5,9 +5,10 @@ import { FIRE, GOLD, RED, TEAL, amb, clamp, css, flames, fr, lerp, type C2, type
 export function foeCenter(f: Foe): [number, number] {
   if (f.kind === 'flame') return [f.x, GY - 150];
   if (f.kind === 'sanctum') return [f.x, GY - 130];
+  if (f.kind === 'hum') return [f.x, GY - 150];
   if (f.kind === 'fly') return [f.x, GY - f.lift];
   switch (f.look) {
-    case 'eye': case 'spike': case 'immune': return [f.x, GY - 95];
+    case 'eye': case 'spike': case 'immune': case 'indic': case 'graph': return [f.x, GY - 95];
     case 'wall': return [f.x, GY - 55];
     case 'guard': return [f.x, GY - 48];
     default: return [f.x, GY - 40];
@@ -16,8 +17,9 @@ export function foeCenter(f: Foe): [number, number] {
 export function foeTop(f: Foe): number {
   if (f.kind === 'flame') return GY - 330;
   if (f.kind === 'sanctum') return GY - 260;
+  if (f.kind === 'hum') return GY - 290;
   if (f.kind === 'fly') return GY - f.lift - 30;
-  if (f.look === 'eye' || f.look === 'spike' || f.look === 'immune') return GY - 160;
+  if (f.look === 'eye' || f.look === 'spike' || f.look === 'immune' || f.look === 'indic' || f.look === 'graph') return GY - 160;
   if (f.look === 'wall') return GY - 120;
   return GY - 110;
 }
@@ -370,6 +372,57 @@ export function drawMini(c: C2, f: Foe, tau: number, P: Pal, flash: boolean, px:
       c.fillStyle = RED; c.fillRect(x + 36, y - 6, 8, 8); c.fillRect(x + 50, y - 6, 8, 8);
       break;
     }
+    case 'indic': {
+      // Indic Edge LM: a 0.6B chip running offline, answering a question grounded in a source page
+      const y = GY - 88 + Math.sin(t * 2) * 6;
+      c.fillStyle = flash ? '#fff' : '#2b2f3a';
+      c.strokeStyle = ink; c.lineWidth = 5;
+      for (let k = -2; k <= 2; k++) { c.fillRect(x + k * 14 - 3, y - 52, 6, 12); c.fillRect(x + k * 14 - 3, y + 40, 6, 12); c.fillRect(x - 52, y + k * 14 - 3, 12, 6); c.fillRect(x + 40, y + k * 14 - 3, 12, 6); }
+      c.fillRect(x - 40, y - 40, 80, 80); c.strokeRect(x - 40, y - 40, 80, 80);
+      c.fillStyle = flash ? '#000' : '#ffb347';
+      c.font = '700 16px "JetBrains Mono",monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('0.6B', x, y - 6);
+      c.font = '700 9px "JetBrains Mono",monospace'; c.fillStyle = flash ? '#000' : '#9fe2ff';
+      c.fillText('QWEN3', x, y + 12); c.textAlign = 'left';
+      // grounded source page with a highlighted line
+      c.fillStyle = paper; c.strokeStyle = ink; c.lineWidth = 3;
+      c.fillRect(x + 54, y - 40, 34, 44); c.strokeRect(x + 54, y - 40, 34, 44);
+      c.fillStyle = ink;
+      for (let k = 0; k < 4; k++) c.fillRect(x + 59, y - 33 + k * 9, 24, 3);
+      c.fillStyle = 'rgba(255,200,40,.85)'; c.fillRect(x + 57, y - 24 + (Math.floor(t * 1.5) % 3) * 9, 28, 6);
+      // question bubble
+      c.fillStyle = paper; c.strokeStyle = ink; c.lineWidth = 4;
+      c.beginPath(); c.arc(x - 42, y - 70 + Math.sin(t * 3) * 4, 18, 0, 6.3); c.fill(); c.stroke();
+      c.fillStyle = ink; c.font = '400 26px Bangers'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', x - 42, y - 69 + Math.sin(t * 3) * 4); c.textAlign = 'left';
+      // no-network sign
+      c.strokeStyle = RED; c.lineWidth = 4;
+      c.beginPath(); c.arc(x - 70, y + 36, 11, 0, 6.3); c.moveTo(x - 77, y + 29); c.lineTo(x - 63, y + 43); c.stroke();
+      c.fillStyle = RED; c.fillRect(x + 16, y - 14, 5, 5);
+      break;
+    }
+    case 'graph': {
+      // CodePulse: a call graph where node size is PageRank importance
+      const y = GY - 95;
+      const nodes: [number, number, number][] = [[-52, 20, 9], [-18, -34, 16], [24, 6, 24], [58, -28, 11], [4, -62, 8], [-30, 52, 8]];
+      const edges = [[0, 1], [1, 2], [2, 3], [1, 4], [0, 5], [5, 2], [4, 3]];
+      c.strokeStyle = flash ? '#fff' : ink; c.lineWidth = 3;
+      for (const [i, j] of edges) {
+        c.beginPath(); c.moveTo(x + nodes[i][0], y + nodes[i][1]); c.lineTo(x + nodes[j][0], y + nodes[j][1]); c.stroke();
+        const u = (t * 0.8 + i * 0.37) % 1;
+        c.fillStyle = TEAL;
+        c.beginPath(); c.arc(lerp(x + nodes[i][0], x + nodes[j][0], u), lerp(y + nodes[i][1], y + nodes[j][1], u), 3.5, 0, 6.3); c.fill();
+      }
+      nodes.forEach(([dx, dy, r], i) => {
+        const pr = r + (i === 2 ? Math.sin(t * 5) * 3 : 0);
+        c.fillStyle = flash ? '#fff' : i === 2 ? RED : paper;
+        c.strokeStyle = ink; c.lineWidth = 4;
+        c.beginPath(); c.arc(x + dx, y + dy, pr, 0, 6.3); c.fill(); c.stroke();
+      });
+      c.fillStyle = css(P.ink); c.font = '700 10px "JetBrains Mono",monospace'; c.textAlign = 'center';
+      c.fillText('PR 0.41', x + 24, y + 42); c.textAlign = 'left';
+      c.fillStyle = RED; c.fillRect(x + 18, y + 2, 5, 5); c.fillRect(x + 28, y + 2, 5, 5);
+      break;
+    }
     case 'immune': {
       // Auto-Immunity: an antibody-armed immune cell with a pulsing nucleus
       const y = GY - 90 + Math.sin(t * 2) * 8;
@@ -396,3 +449,116 @@ export function drawMini(c: C2, f: Foe, tau: number, P: Pal, flash: boolean, px:
   c.restore();
 }
 void FIRE;
+
+
+/* =====================================================================
+   HUM — "The Downmix Phantom": a vinyl-record head in berry-pink headphones,
+   an equalizer for legs, and six orbiting surround speakers that your
+   slashes "downmix" one pair at a time until only stereo is left.
+   ===================================================================== */
+const BERRY = '#e0245e';
+const CH6 = ['L', 'C', 'R', 'Ls', 'Rs', 'LFE'];
+export function drawHumBoss(c: C2, f: Foe, tau: number, eps: number, P: Pal, flash: boolean) {
+  const t = tau + amb.t;
+  const night = P.night > 0.5;
+  const done = f.hits.filter((h) => h.t <= tau).length;
+  const cones = Math.max(2, 6 - Math.floor(done / 2));
+  const cx = f.x;
+  const cy = GY - 150 + Math.sin(t * 1.8) * 6;
+  const rim = night ? css(P.ink) : '#0f0d0b';
+  const beat = (t * 2) % 1;
+  c.save();
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+
+  // equalizer legs
+  for (let k = 0; k < 11; k++) {
+    const h = 16 + (0.5 + 0.5 * Math.sin(t * 5 + k * 0.9)) * 44 + (k % 3 === 0 ? beat * 10 : 0);
+    const g = c.createLinearGradient(0, GY - h, 0, GY);
+    g.addColorStop(0, flash ? '#fff' : '#ff7aa8'); g.addColorStop(1, flash ? '#fff' : BERRY);
+    c.fillStyle = g;
+    c.strokeStyle = rim; c.lineWidth = 3;
+    c.fillRect(cx - 82 + k * 15, GY - h, 12, h); c.strokeRect(cx - 82 + k * 15, GY - h, 12, h);
+  }
+
+  // surround speakers (back ones first)
+  const names = cones === 6 ? CH6 : cones === 2 ? ['L', 'R'] : CH6.slice(0, cones);
+  const order: { k: number; a: number; s: number }[] = [];
+  for (let k = 0; k < cones; k++) {
+    const a = t * 0.8 + (k * Math.PI * 2) / cones;
+    order.push({ k, a, s: Math.sin(a) });
+  }
+  order.sort((p, q) => p.s - q.s);
+  const drawCones = (front: boolean) => {
+    for (const o of order) {
+      if ((o.s >= 0) !== front) continue;
+      const px = cx + Math.cos(o.a) * 150;
+      const py = cy + 34 + o.s * 42;
+      const dep = 0.85 + 0.25 * o.s;
+      const r = 27 * dep;
+      // sound pulse ring
+      const pr = ((t * 1.6 + o.k * 0.3) % 1);
+      c.strokeStyle = `rgba(224,36,94,${(1 - pr) * 0.6})`;
+      c.lineWidth = 3;
+      c.beginPath(); c.arc(px, py, r + pr * 26, 0, 6.3); c.stroke();
+      c.fillStyle = flash ? '#fff' : night ? '#241d36' : '#2b2b33';
+      c.strokeStyle = night ? css(P.ink) : '#0f0d0b'; c.lineWidth = 5 * dep;
+      c.beginPath(); c.arc(px, py, r, 0, 6.3); c.fill(); c.stroke();
+      c.strokeStyle = flash ? '#fff' : BERRY; c.lineWidth = 3;
+      c.beginPath(); c.arc(px, py, r * 0.66, 0, 6.3); c.stroke();
+      c.fillStyle = flash ? '#fff' : BERRY;
+      c.beginPath(); c.arc(px, py, r * (0.28 + beat * 0.08), 0, 6.3); c.fill();
+      c.fillStyle = css(P.paper); c.font = `700 ${11 * dep}px "JetBrains Mono",monospace`; c.textAlign = 'center';
+      c.fillText(names[o.k] ?? '', px, py - r - 6); c.textAlign = 'left';
+    }
+  };
+  drawCones(false);
+
+  // headphones band
+  c.strokeStyle = flash ? '#fff' : BERRY; c.lineWidth = 14;
+  c.beginPath(); c.arc(cx, cy, 98, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+  c.strokeStyle = rim; c.lineWidth = 3;
+  c.beginPath(); c.arc(cx, cy, 106, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+  c.beginPath(); c.arc(cx, cy, 91, Math.PI * 1.05, Math.PI * 1.95); c.stroke();
+  for (const sx of [-1, 1]) {
+    c.fillStyle = flash ? '#fff' : BERRY;
+    c.strokeStyle = rim; c.lineWidth = 5;
+    c.beginPath(); c.roundRect(cx + sx * 96 - 14, cy - 28, 28, 56, 10); c.fill(); c.stroke();
+  }
+
+  // vinyl record
+  const R = 76;
+  c.fillStyle = flash ? '#fff' : '#0b0b10';
+  c.strokeStyle = night ? css(P.ink) : '#0f0d0b'; c.lineWidth = 6;
+  c.beginPath(); c.arc(cx, cy, R, 0, 6.3); c.fill(); c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,.14)'; c.lineWidth = 1.5;
+  for (let g = 0; g < 6; g++) { c.beginPath(); c.arc(cx, cy, 30 + g * 7.5, 0, 6.3); c.stroke(); }
+  c.save();
+  c.translate(cx, cy); c.rotate(t * 2.2);
+  const sh = c.createLinearGradient(-R, 0, R, 0);
+  sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(0.5, 'rgba(255,255,255,.22)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = sh;
+  c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R - 3, -0.35, 0.35); c.closePath(); c.fill();
+  c.restore();
+  c.fillStyle = flash ? '#fff' : BERRY;
+  c.beginPath(); c.arc(cx, cy, 27, 0, 6.3); c.fill();
+  c.fillStyle = flash ? '#000' : '#fff';
+  c.font = '400 20px Bangers,Impact,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('HUM', cx, cy - 2);
+  c.fillStyle = '#0b0b10'; c.beginPath(); c.arc(cx, cy + 14, 3, 0, 6.3); c.fill();
+  c.textAlign = 'left';
+  // red glitch eyes on the grooves
+  c.fillStyle = RED; c.fillRect(cx - 46, cy - 6, 8, 8); c.fillRect(cx + 38, cy - 6, 8, 8);
+
+  drawCones(true);
+
+  // DMR readout
+  const label = cones > 2 ? `DMR  ${cones - 1}.1 → 2.0` : 'DMR  STEREO';
+  c.font = '700 12px "JetBrains Mono",monospace';
+  const w = c.measureText(label).width + 14;
+  c.fillStyle = css(P.ink); c.fillRect(cx - w / 2, cy - 142, w, 20);
+  c.fillStyle = cones > 2 ? '#ff7aa8' : TEAL; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(label, cx, cy - 131); c.textAlign = 'left';
+  void eps;
+  c.restore();
+}

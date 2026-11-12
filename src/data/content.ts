@@ -15,17 +15,17 @@ export const profile = {
 
 export const intro = [
   'I am a Junior AI Engineer at Kenpath, working across full-stack development and applied AI. Outside work I maintain RTensorLabs, an independent lab where the problem decides what we build next.',
-  'My path runs from C and Python, through machine learning and CUDA, to writing a Transformer by hand in Rust and shipping an end-to-end encrypted messenger in Flutter.',
+  'My path runs from C and Python, through machine learning and CUDA, to writing a Transformer by hand in Rust, shipping an end-to-end encrypted messenger in Flutter, and a native Android music player in Kotlin.',
 ];
 
 export const stats = [
   { value: 9.5, decimals: 1, label: 'CGPA, B.E. AI & Data Science' },
-  { value: 7, decimals: 0, label: 'Projects shipped' },
-  { value: 4, decimals: 0, label: 'Languages used daily' },
+  { value: 3, decimals: 0, label: 'Flagship projects: FLAME, Sanctum, Hum' },
+  { value: 5, decimals: 0, label: 'Languages used daily' },
 ];
 
 export type Featured = {
-  id: 'flame' | 'sanctum';
+  id: 'flame' | 'sanctum' | 'hum';
   name: string;
   kicker: string;
   blurb: string;
@@ -59,7 +59,32 @@ export const featured: Featured[] = [
       { label: 'Android beta', href: 'https://github.com/RTensorLabs/sanctum/releases/latest' },
     ],
   },
+  {
+    id: 'hum',
+    name: 'HUM',
+    kicker: 'Find what you enjoy, then play the best matching recording',
+    blurb:
+      'A native Android music player from RTensorLabs. It discovers music through YouTube Music or Spotify, finds the best matching recording among your files and connected sources, and renders supported surround audio to stereo with its own Downmix Renderer. Lyrics follow the song in original or English letters, with playlist import and Android Auto.',
+    stack: ['Kotlin', 'Android', 'Downmix Renderer', 'YouTube Music · Spotify'],
+    links: [
+      { label: 'Source', href: 'https://github.com/RTensorLabs/Hum' },
+      { label: 'Download beta', href: 'https://github.com/RTensorLabs/music-app/releases' },
+    ],
+  },
 ];
+
+/** Smaller projects, listed in Read Mode only. */
+export const workshop = [
+  { name: 'Delivery Route App', note: 'Python route and delivery app with Mapbox maps and live traffic.', href: 'https://github.com/Tejascodex001/delivery-route-app' },
+  { name: 'Music FFAC', note: 'A terminal music player in C++ on miniaudio, built to learn threads and atomics. Complete.', href: 'https://github.com/Tejascodex001/music-ffac' },
+  { name: 'Lintless', note: 'Rust, from RTensorLabs.', href: 'https://github.com/RTensorLabs/lintless' },
+  { name: 'Audiobook Studio', note: 'Python.', href: 'https://github.com/Tejascodex001/audiobook-studio' },
+  { name: 'RecyclePro', note: 'JavaScript.', href: 'https://github.com/Tejascodex001/recylepro' },
+  { name: 'Sign Language, Face Attendance, FaceNet', note: 'Earlier computer-vision projects in Python.', href: 'https://github.com/Tejascodex001/sign-language' },
+];
+
+/** Flagship projects: each is a boss in the film. */
+export const flagshipNote = 'The three flagship projects of RTensorLabs, my independent lab.';
 
 export const otherWork = [
   {
@@ -73,6 +98,18 @@ export const otherWork = [
     blurb: 'An LLM firewall that uses a DeBERTa classifier to detect prompt injection.',
     tags: ['DeBERTa', 'NLP'],
     href: 'https://github.com/Tejascodex001/smartguard',
+  },
+  {
+    name: 'Indic Edge LM',
+    blurb: 'Offline, grounded question answering for Indic languages: fine-tuning Qwen3-0.6B to run on edge devices.',
+    tags: ['Qwen3-0.6B', 'Indic NLP', 'Edge'],
+    href: 'https://github.com/RTensorLabs/indic-edge-lm',
+  },
+  {
+    name: 'CodePulse',
+    blurb: 'Indexes a Python codebase and answers queries by meaning: dense vectors for every function, an AST call graph, and PageRank for structural importance.',
+    tags: ['Python', 'Embeddings', 'Call graph'],
+    href: 'https://github.com/Tejascodex001/codepulse',
   },
   {
     name: 'Vision Engine',
@@ -102,6 +139,7 @@ export const toolbox: ToolGroup[] = [
     name: 'Languages',
     items: [
       { name: 'Rust', note: 'FLAME, Sanctum core' },
+      { name: 'Kotlin', note: 'Hum, native Android' },
       { name: 'C++', note: 'Vision Engine, Anomaly Detector' },
       { name: 'Python', note: 'ML, RAG, LLM tooling' },
       { name: 'Dart', note: 'Flutter apps' },

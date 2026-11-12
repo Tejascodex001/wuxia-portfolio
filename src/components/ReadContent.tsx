@@ -1,4 +1,4 @@
-import { background, featured, intro, otherWork, profile, stats, toolbox } from '@/data/content';
+import { background, featured, intro, otherWork, profile, stats, toolbox, workshop } from '@/data/content';
 
 /** The whole portfolio as plain, readable HTML. Used for Read Mode and by assistive tech. */
 const ReadContent = () => (
@@ -42,6 +42,15 @@ const ReadContent = () => (
           <li key={w.name}>
             <a href={w.href} target="_blank" rel="noopener noreferrer">{w.name}</a>
             <span> · {w.tags.join(', ')}. {w.blurb}</span>
+          </li>
+        ))}
+      </ul>
+      <h3>Also in the workshop</h3>
+      <ul className="plain">
+        {workshop.map((w) => (
+          <li key={w.name}>
+            <a href={w.href} target="_blank" rel="noopener noreferrer">{w.name}</a>
+            <span> · {w.note}</span>
           </li>
         ))}
       </ul>

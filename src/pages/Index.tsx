@@ -1,35 +1,30 @@
-import { useScrollVars } from '@/hooks/use-scroll-vars';
-import Nav from '@/components/Nav';
-import CommandMenu from '@/components/CommandMenu';
-import Easter from '@/components/Easter';
-import Fx from '@/components/Fx';
-import Hero from '@/components/Hero';
-import Marquee from '@/components/Marquee';
-import Work from '@/components/Work';
-import Stack from '@/components/Stack';
-import About from '@/components/About';
-import Contact from '@/components/Contact';
-import Footer from '@/components/Footer';
+import { useState } from 'react';
+import ScrollStage from '@/components/ScrollStage';
+import ReadContent from '@/components/ReadContent';
+import { usePrefersReducedMotion } from '@/hooks/use-reduced-motion';
 
 const Index = () => {
-  useScrollVars();
+  const reduced = usePrefersReducedMotion();
+  const [choice, setChoice] = useState<'play' | 'read' | null>(null);
+  const mode = choice ?? (reduced ? 'read' : 'play');
+
+  if (mode === 'read') {
+    return (
+      <main className="read-wrap">
+        <button type="button" className="mini fixed" onClick={() => setChoice('play')}>
+          {reduced ? 'PLAY THE SCROLL STORY (MOTION)' : 'PLAY MODE'}
+        </button>
+        <ReadContent />
+      </main>
+    );
+  }
 
   return (
-    <div className="grain relative">
-      <Nav />
-      <CommandMenu />
-      <Easter />
-      <Fx />
-      <main>
-        <Hero />
-        <Marquee />
-        <Work />
-        <Stack />
-        <About />
-        <Contact />
-      </main>
-      <Footer />
-    </div>
+    <main>
+      <a className="skip" href="#read-fallback" onClick={() => setChoice('read')}>Skip the animation and read the portfolio</a>
+      <ScrollStage onRead={() => { window.scrollTo(0, 0); setChoice('read'); }} />
+      <div id="read-fallback" className="sr-only"><ReadContent /></div>
+    </main>
   );
 };
 

@@ -1,22 +1,12 @@
 import { Link } from 'react-router-dom';
-import ParticleText from '@/components/ParticleText';
 
 const NotFound = () => (
-  <main className="flex min-h-screen flex-col justify-center bg-background px-5 sm:px-8">
-    <div className="mx-auto w-full max-w-5xl">
-      <p className="kicker mb-4">Error 404</p>
-      <h1 aria-label="404 page not found">
-        <ParticleText text="404" height={260} align="left" className="font-display font-normal text-ink" />
-      </h1>
-      <p className="mt-8 max-w-md text-lg text-muted-foreground">
-        This page does not exist. Push the digits around while you decide where to go next.
-      </p>
-      <Link
-        to="/"
-        className="mt-8 inline-flex items-center rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition hover:-translate-y-0.5"
-      >
-        Back to the homepage
-      </Link>
+  <main className="read-wrap" style={{ display: 'grid', placeItems: 'center', textAlign: 'center' }}>
+    <div>
+      <p className="font-display" style={{ fontSize: 'clamp(110px, 28vw, 260px)', lineHeight: 0.85, margin: 0, color: '#d62a1e', textShadow: '8px 8px 0 #0f0d0b' }}>404</p>
+      <p style={{ font: "400 28px Bangers, Impact, sans-serif", letterSpacing: '.08em', margin: '18px 0 6px' }}>LOST IN THE MIST</p>
+      <p style={{ font: '14px "JetBrains Mono", monospace', maxWidth: '40ch', margin: '0 auto 22px' }}>This path leads nowhere, wanderer. Even masters take a wrong turn in the Jianghu.</p>
+      <Link to="/" className="mini" style={{ fontSize: 20, padding: '4px 18px', textDecoration: 'none' }}>BACK TO THE GATE</Link>
     </div>
   </main>
 );

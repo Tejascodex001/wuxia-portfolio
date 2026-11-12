@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -58,17 +59,19 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         wuxia: {
-          ink: "hsl(var(--ink-black))",
-          crimson: "hsl(var(--crimson-red))",
-          gold: "hsl(var(--ancient-gold))",
-          paper: "hsl(var(--rice-paper))",
-          shadow: "hsl(var(--shadow-gray))",
+          ink: "hsl(var(--ink-black) / <alpha-value>)",
+          crimson: "hsl(var(--crimson-red) / <alpha-value>)",
+          gold: "hsl(var(--ancient-gold) / <alpha-value>)",
+          paper: "hsl(var(--rice-paper) / <alpha-value>)",
+          shadow: "hsl(var(--shadow-gray) / <alpha-value>)",
+          goldink: "hsl(var(--gold-ink) / <alpha-value>)",
         },
       },
       fontFamily: {
-        'calligraphy': ['Ma Shan Zheng', 'cursive'],
-        'calligraphy-alt': ['ZCOOL XiaoWei', 'serif'],
-        'sans': ['Inter', 'sans-serif'],
+        calligraphy: ['"Ma Shan Zheng"', '"Noto Serif SC"', 'cursive'],
+        'calligraphy-alt': ['"ZCOOL XiaoWei"', 'serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -104,6 +107,10 @@ export default {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-20px)" },
         },
+        marquee: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
         "fade-up": {
           "0%": { opacity: "0", transform: "translateY(30px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
@@ -116,8 +123,9 @@ export default {
         "ink-brush": "ink-brush 0.6s ease-out forwards",
         "float": "float 6s ease-in-out infinite",
         "fade-up": "fade-up 0.8s ease-out forwards",
+        marquee: "marquee 40s linear infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animate],
 } satisfies Config;

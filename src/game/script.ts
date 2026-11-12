@@ -18,7 +18,7 @@ export type Step = 1 | 2 | 3;
 export type HitFx = 'n' | 'clang' | 'break' | 'impact' | 'final';
 export type Hit = { t: number; step: Step; fx: HitFx; eps: number; id: number };
 export type FoeKind = 'walk' | 'fly' | 'flame' | 'sanctum' | 'hum';
-export type Look = 'guard' | 'wall' | 'eye' | 'spike' | 'immune' | 'indic' | 'graph';
+export type Look = 'guard' | 'wall' | 'eye' | 'spike' | 'immune';
 export type SpecialKind = 'whirl' | 'wave' | 'thunder' | 'heaven' | 'leap' | 'decrypt' | 'sonic';
 export type Special = { t: number; kind: SpecialKind; name: string; zh: string; x: number; to?: number; t1?: number };
 export type Chapter = { t: number; name: string; zh: string };
@@ -297,8 +297,6 @@ function build() {
   const sp: [string, string, Look][] = [
     ['GuardLayer', '', 'guard'],
     ['SmartGuard', '', 'wall'],
-    ['Indic Edge LM', '', 'indic'],
-    ['CodePulse', '', 'graph'],
     ['Vision Engine', 'CUDA', 'eye'],
     ['Anomaly Detector', '', 'spike'],
     ['Auto-Immunity', '', 'immune'],
@@ -317,7 +315,7 @@ function build() {
     mark('spar' + i);
     if (i < minis.length - 1) idle(0.08);
   });
-  special({ t: minis[6].hits[0].t - 0.2, kind: 'thunder', name: 'THUNDER STRIKE', zh: '雷击', x: minis[6].x });
+  special({ t: minis[4].hits[0].t - 0.2, kind: 'thunder', name: 'THUNDER STRIKE', zh: '雷击', x: minis[4].x });
   mark('sparDie');
   idle(1.8);
 

@@ -100,18 +100,6 @@ export const otherWork = [
     href: 'https://github.com/Tejascodex001/smartguard',
   },
   {
-    name: 'Indic Edge LM',
-    blurb: 'Offline, grounded question answering for Indic languages: fine-tuning Qwen3-0.6B to run on edge devices.',
-    tags: ['Qwen3-0.6B', 'Indic NLP', 'Edge'],
-    href: 'https://github.com/RTensorLabs/indic-edge-lm',
-  },
-  {
-    name: 'CodePulse',
-    blurb: 'Indexes a Python codebase and answers queries by meaning: dense vectors for every function, an AST call graph, and PageRank for structural importance.',
-    tags: ['Python', 'Embeddings', 'Call graph'],
-    href: 'https://github.com/Tejascodex001/codepulse',
-  },
-  {
     name: 'Vision Engine',
     blurb: 'A real-time C++ image and video pipeline with hand-written convolutions.',
     tags: ['C++', 'OpenCV'],

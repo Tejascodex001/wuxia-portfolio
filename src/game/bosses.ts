@@ -8,7 +8,7 @@ export function foeCenter(f: Foe): [number, number] {
   if (f.kind === 'hum') return [f.x, GY - 150];
   if (f.kind === 'fly') return [f.x, GY - f.lift];
   switch (f.look) {
-    case 'eye': case 'spike': case 'immune': case 'indic': case 'graph': return [f.x, GY - 95];
+    case 'eye': case 'spike': case 'immune': return [f.x, GY - 95];
     case 'wall': return [f.x, GY - 55];
     case 'guard': return [f.x, GY - 48];
     default: return [f.x, GY - 40];
@@ -19,7 +19,7 @@ export function foeTop(f: Foe): number {
   if (f.kind === 'sanctum') return GY - 260;
   if (f.kind === 'hum') return GY - 290;
   if (f.kind === 'fly') return GY - f.lift - 30;
-  if (f.look === 'eye' || f.look === 'spike' || f.look === 'immune' || f.look === 'indic' || f.look === 'graph') return GY - 160;
+  if (f.look === 'eye' || f.look === 'spike' || f.look === 'immune') return GY - 160;
   if (f.look === 'wall') return GY - 120;
   return GY - 110;
 }
@@ -370,57 +370,6 @@ export function drawMini(c: C2, f: Foe, tau: number, P: Pal, flash: boolean, px:
       c.beginPath(); c.moveTo(x, y - 128); c.lineTo(x - 12, y - 104); c.lineTo(x + 12, y - 104); c.closePath(); c.fill();
       c.fillStyle = '#fff'; c.font = '400 16px Bangers'; c.textAlign = 'center'; c.fillText('!', x, y - 106); c.textAlign = 'left';
       c.fillStyle = RED; c.fillRect(x + 36, y - 6, 8, 8); c.fillRect(x + 50, y - 6, 8, 8);
-      break;
-    }
-    case 'indic': {
-      // Indic Edge LM: a 0.6B chip running offline, answering a question grounded in a source page
-      const y = GY - 88 + Math.sin(t * 2) * 6;
-      c.fillStyle = flash ? '#fff' : '#2b2f3a';
-      c.strokeStyle = ink; c.lineWidth = 5;
-      for (let k = -2; k <= 2; k++) { c.fillRect(x + k * 14 - 3, y - 52, 6, 12); c.fillRect(x + k * 14 - 3, y + 40, 6, 12); c.fillRect(x - 52, y + k * 14 - 3, 12, 6); c.fillRect(x + 40, y + k * 14 - 3, 12, 6); }
-      c.fillRect(x - 40, y - 40, 80, 80); c.strokeRect(x - 40, y - 40, 80, 80);
-      c.fillStyle = flash ? '#000' : '#ffb347';
-      c.font = '700 16px "JetBrains Mono",monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText('0.6B', x, y - 6);
-      c.font = '700 9px "JetBrains Mono",monospace'; c.fillStyle = flash ? '#000' : '#9fe2ff';
-      c.fillText('QWEN3', x, y + 12); c.textAlign = 'left';
-      // grounded source page with a highlighted line
-      c.fillStyle = paper; c.strokeStyle = ink; c.lineWidth = 3;
-      c.fillRect(x + 54, y - 40, 34, 44); c.strokeRect(x + 54, y - 40, 34, 44);
-      c.fillStyle = ink;
-      for (let k = 0; k < 4; k++) c.fillRect(x + 59, y - 33 + k * 9, 24, 3);
-      c.fillStyle = 'rgba(255,200,40,.85)'; c.fillRect(x + 57, y - 24 + (Math.floor(t * 1.5) % 3) * 9, 28, 6);
-      // question bubble
-      c.fillStyle = paper; c.strokeStyle = ink; c.lineWidth = 4;
-      c.beginPath(); c.arc(x - 42, y - 70 + Math.sin(t * 3) * 4, 18, 0, 6.3); c.fill(); c.stroke();
-      c.fillStyle = ink; c.font = '400 26px Bangers'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', x - 42, y - 69 + Math.sin(t * 3) * 4); c.textAlign = 'left';
-      // no-network sign
-      c.strokeStyle = RED; c.lineWidth = 4;
-      c.beginPath(); c.arc(x - 70, y + 36, 11, 0, 6.3); c.moveTo(x - 77, y + 29); c.lineTo(x - 63, y + 43); c.stroke();
-      c.fillStyle = RED; c.fillRect(x + 16, y - 14, 5, 5);
-      break;
-    }
-    case 'graph': {
-      // CodePulse: a call graph where node size is PageRank importance
-      const y = GY - 95;
-      const nodes: [number, number, number][] = [[-52, 20, 9], [-18, -34, 16], [24, 6, 24], [58, -28, 11], [4, -62, 8], [-30, 52, 8]];
-      const edges = [[0, 1], [1, 2], [2, 3], [1, 4], [0, 5], [5, 2], [4, 3]];
-      c.strokeStyle = flash ? '#fff' : ink; c.lineWidth = 3;
-      for (const [i, j] of edges) {
-        c.beginPath(); c.moveTo(x + nodes[i][0], y + nodes[i][1]); c.lineTo(x + nodes[j][0], y + nodes[j][1]); c.stroke();
-        const u = (t * 0.8 + i * 0.37) % 1;
-        c.fillStyle = TEAL;
-        c.beginPath(); c.arc(lerp(x + nodes[i][0], x + nodes[j][0], u), lerp(y + nodes[i][1], y + nodes[j][1], u), 3.5, 0, 6.3); c.fill();
-      }
-      nodes.forEach(([dx, dy, r], i) => {
-        const pr = r + (i === 2 ? Math.sin(t * 5) * 3 : 0);
-        c.fillStyle = flash ? '#fff' : i === 2 ? RED : paper;
-        c.strokeStyle = ink; c.lineWidth = 4;
-        c.beginPath(); c.arc(x + dx, y + dy, pr, 0, 6.3); c.fill(); c.stroke();
-      });
-      c.fillStyle = css(P.ink); c.font = '700 10px "JetBrains Mono",monospace'; c.textAlign = 'center';
-      c.fillText('PR 0.41', x + 24, y + 42); c.textAlign = 'left';
-      c.fillStyle = RED; c.fillRect(x + 18, y + 2, 5, 5); c.fillRect(x + 28, y + 2, 5, 5);
       break;
     }
     case 'immune': {

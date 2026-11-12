@@ -20,6 +20,8 @@ export type C2 = CanvasRenderingContext2D;
 
 /** Ambient clock so flames and glows keep breathing while the scene is paused. */
 export const amb = { t: 0 };
+/** Render quality: k scales canvas shadow blur (0 on phones, where it is very slow). */
+export const q = { k: 1 };
 
 export function flames(c: C2, x: number, y: number, s: number, t0: number, seed: number) {
   const tau = t0 + amb.t;

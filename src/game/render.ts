@@ -3,7 +3,7 @@ import {
   dawnAmt, jumpY, nightAmt, playerSpeed, playerX, sitting, slashAt, toTau,
   type Foe, type Hit,
 } from './script';
-import { amb, clamp, css, ease, flames, fr, lerp, mixc, FIRE, GOLD, RED, type C2, type Pal, type RGB } from './util';
+import { amb, q, clamp, css, ease, flames, fr, lerp, mixc, FIRE, GOLD, RED, type C2, type Pal, type RGB } from './util';
 import { drawMini, drawOnionKeeper, drawTransformer, foeCenter } from './bosses';
 import { drawChapterCard, drawHitExtras, drawLights, drawSpecialBanner, drawSpecials, flashAmt, zoomPunch } from './fx';
 
@@ -527,24 +527,25 @@ function drawShrine(c: CanvasRenderingContext2D, x: number, tau: number, dawn: n
   c.restore();
 }
 
-function drawWorld(c: CanvasRenderingContext2D, camX: number, tau: number, P: Pal) {
+function drawWorld(c: CanvasRenderingContext2D, camX: number, tau: number, P: Pal, narrow = false) {
   const tx = 70 - camX;
   if (tx > -900 && tx < W + 50) {
-    brushText(c, 'TEJAS', tx, GY - 222, 210, P);
+    const ts = narrow ? 128 : 210;
+    brushText(c, 'TEJAS', tx, GY - (narrow ? 176 : 222), ts, P);
     c.save();
-    c.translate(tx + 8, GY - 196);
+    c.translate(tx + 8, GY - (narrow ? 152 : 196));
     c.transform(1, 0, -0.25, 1, 0, 0);
     c.fillStyle = css(P.ink);
-    c.fillRect(0, 0, 470, 44);
+    c.fillRect(0, 0, narrow ? 312 : 470, narrow ? 34 : 44);
     c.fillStyle = css(P.paper);
-    c.font = '400 29px Bangers,Impact,sans-serif';
+    c.font = `400 ${narrow ? 19 : 29}px Bangers,Impact,sans-serif`;
     c.textBaseline = 'middle';
-    c.fillText('GOWDA S  ·  JUNIOR AI ENGINEER', 16, 23);
+    c.fillText('GOWDA S  ·  JUNIOR AI ENGINEER', 12, narrow ? 18 : 23);
     c.restore();
     c.fillStyle = css(P.ink);
-    c.font = '400 34px "Ma Shan Zheng",cursive';
+    c.font = `400 ${narrow ? 24 : 34}px "Ma Shan Zheng",cursive`;
     c.textBaseline = 'alphabetic';
-    c.fillText('Wanderer of Code', tx + 10, GY - 112);
+    c.fillText('Wanderer of Code', tx + 10, GY - (narrow ? 90 : 98));
   }
   for (const g of SCRIPT.gates) {
     if (g.x - camX < -220 || g.x - camX > W + 220) continue;
@@ -657,15 +658,15 @@ function drawPops(c: CanvasRenderingContext2D, eps: number, P: Pal) {
 }
 
 /* ---------- boss bar (HUD) ---------- */
-function drawBossBar(c: CanvasRenderingContext2D, tau: number, P: Pal) {
+function drawBossBar(c: CanvasRenderingContext2D, tau: number, P: Pal, vw: number) {
   const boss = SCRIPT.foes.find((f) => (f.kind === 'flame' || f.kind === 'sanctum') && tau >= f.spawn && tau <= f.hits[f.hits.length - 1].t + 0.9);
   if (!boss) return;
   const total = boss.hits.length;
   const done = boss.hits.filter((h) => h.t <= tau).length;
   const remainingHits = total - done;
-  const x = 250;
+  const w = Math.min(500, vw - 40);
+  const x = (vw - w) / 2;
   const y = 16;
-  const w = 500;
   c.save();
   c.globalAlpha = clamp((tau - boss.spawn) / 0.5, 0, 1);
   c.fillStyle = css(P.ink);
@@ -695,8 +696,14 @@ function drawBossBar(c: CanvasRenderingContext2D, tau: number, P: Pal) {
 /* ---------- main ---------- */
 export type FrameInfo = { glitch: number; tau: number; eps: number };
 
-export function renderFrame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, eps: number, scale: number, ambT = 0): FrameInfo {
+export type View = { vw: number };
+export const LANDSCAPE: View = { vw: W };
+export const PORTRAIT: View = { vw: 480 };
+
+export function renderFrame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, eps: number, scale: number, ambT = 0, view: View = LANDSCAPE): FrameInfo {
   amb.t = ambT;
+  const VW = view.vw;
+  const narrow = VW < 800;
   const tau = toTau(eps);
   const P = palette(nightAmt(tau));
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
@@ -706,18 +713,18 @@ export function renderFrame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEle
     const age = eps - h.eps;
     if ((h.fx === 'final' || h.fx === 'impact') && age >= 0 && age < 0.1) {
       ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, W, H);
+      ctx.fillRect(0, 0, VW, H);
       ctx.fillStyle = '#000';
-      ctx.beginPath(); ctx.moveTo(-50, H * 0.72); ctx.lineTo(W + 50, H * 0.2); ctx.lineTo(W + 50, H * 0.28); ctx.lineTo(-50, H * 0.82); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-50, H * 0.72); ctx.lineTo(VW + 50, H * 0.2); ctx.lineTo(VW + 50, H * 0.28); ctx.lineTo(-50, H * 0.82); ctx.fill();
       for (let i = 0; i < 26; i++) {
         const a = fr(i * 3.1 + h.id) * 6.28;
         const l = 300 + fr(i * 7.7) * 600;
         ctx.lineWidth = 1 + fr(i * 1.3) * 4;
         ctx.strokeStyle = '#000';
-        ctx.beginPath(); ctx.moveTo(W / 2 + Math.cos(a) * 180, H / 2 + Math.sin(a) * 120); ctx.lineTo(W / 2 + Math.cos(a) * l, H / 2 + Math.sin(a) * l); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(VW / 2 + Math.cos(a) * 180, H / 2 + Math.sin(a) * 120); ctx.lineTo(VW / 2 + Math.cos(a) * l, H / 2 + Math.sin(a) * l); ctx.stroke();
       }
       ctx.save();
-      ctx.translate(W / 2, H / 2);
+      ctx.translate(VW / 2, H / 2);
       ctx.rotate(-0.32);
       ctx.fillStyle = RED;
       ctx.fillRect(-W, -5, W * 2, 10);
@@ -727,7 +734,10 @@ export function renderFrame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEle
   }
 
   const px = playerX(tau);
-  const camX = playerX(Math.max(0, tau - 0.25)) - PLAYER_SX;
+  const pxLag = playerX(Math.max(0, tau - 0.25));
+  // portrait: start with the title in frame, then settle the hero toward the left third
+  const heroSx = narrow ? lerp(300, 150, clamp((pxLag - 300) / 320, 0, 1)) : PLAYER_SX;
+  const camX = pxLag - heroSx;
 
   // shake + glitch from recent hits
   let shake = 0;
@@ -748,14 +758,14 @@ export function renderFrame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEle
   ctx.translate(sx, sy);
   const zoom = zoomPunch(eps);
   if (zoom > 0) {
-    ctx.translate(W / 2, H / 2);
+    ctx.translate(VW / 2, H / 2);
     ctx.scale(1 + zoom, 1 + zoom);
-    ctx.translate(-W / 2, -H / 2);
+    ctx.translate(-VW / 2, -H / 2);
   }
   drawBG(ctx, camX, tau, P);
   ctx.save();
   ctx.translate(-camX, 0);
-  drawWorld(ctx, camX, tau, P);
+  drawWorld(ctx, camX, tau, P, narrow);
   drawProjs(ctx, tau, P);
   for (const f of SCRIPT.foes) drawFoe(ctx, f, tau, eps, P, px);
 
@@ -852,7 +862,7 @@ export function renderFrame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEle
   ctx.globalAlpha = 0.35;
   ctx.fillStyle = ctx.createPattern(dotPat!, 'repeat')!;
   ctx.fillRect(0, 0, 70, H);
-  ctx.fillRect(W - 70, 0, 70, H);
+  ctx.fillRect(VW - 70, 0, 70, H);
   ctx.restore();
 
   ctx.save();
@@ -860,13 +870,13 @@ export function renderFrame(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEle
   ctx.translate(-camX, 0);
   drawPops(ctx, eps, P);
   ctx.restore();
-  drawBossBar(ctx, tau, P);
-  drawSpecialBanner(ctx, eps, P);
-  drawChapterCard(ctx, eps, P);
+  drawBossBar(ctx, tau, P, VW);
+  drawSpecialBanner(ctx, eps, P, VW);
+  drawChapterCard(ctx, eps, P, VW);
   const fl = flashAmt(eps);
   if (fl > 0.01) {
     ctx.fillStyle = `rgba(255,255,255,${fl})`;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, VW, H);
   }
 
   // glitch slices

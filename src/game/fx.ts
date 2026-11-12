@@ -1,6 +1,6 @@
 import { GY, H, HITS, SCRIPT, W, toEps, type Hit } from './script';
 import { foeCenter } from './bosses';
-import { FIRE, GOLD, RED, TEAL, clamp, css, ease, fr, lerp, type C2, type Pal } from './util';
+import { FIRE, GOLD, RED, TEAL, q, clamp, css, ease, fr, lerp, type C2, type Pal } from './util';
 
 const SP_EPS = SCRIPT.specials.map((s) => toEps(s.t));
 const CH_EPS = SCRIPT.chapters.map((c) => toEps(c.t));
@@ -24,12 +24,12 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
         c.strokeStyle = k === 0 ? `rgba(255,255,255,${1 - u})` : `${gold}${(1 - u) * 0.8})`;
         c.lineWidth = 12 - k * 2.5;
         c.shadowColor = '#ffd27a';
-        c.shadowBlur = 24;
+        c.shadowBlur = q.k * (24);
         c.beginPath();
         c.arc(px, py - 46, 40 + u * 190 + k * 20, k + u * 8, k + u * 8 + 2.4);
         c.stroke();
       }
-      c.shadowBlur = 0;
+      c.shadowBlur = q.k * (0);
       c.strokeStyle = css(P.ink, (1 - u) * 0.5);
       c.lineWidth = 4;
       c.beginPath(); c.ellipse(px, GY + 4, 30 + u * 220, 8 + u * 22, 0, 0, 6.3); c.stroke();
@@ -42,7 +42,7 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
           const xx = x - k * 22;
           c.globalAlpha = (1 - k / 7) * clamp(1.15 - u, 0, 1);
           c.shadowColor = '#fff7c0';
-          c.shadowBlur = 26;
+          c.shadowBlur = q.k * (26);
           c.fillStyle = k === 0 ? '#ffffff' : k < 3 ? '#ffe88a' : '#ffbf3a';
           c.beginPath();
           c.arc(xx, GY - 64, 84, -1.15, 1.15);
@@ -58,7 +58,7 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
         const aa = k * 0.7 + u * 10;
         c.fillStyle = `rgba(255,${(200 + k * 3) | 0},120,${(1 - k / 16) * (1 - u)})`;
         c.shadowColor = '#ffd27a';
-        c.shadowBlur = 16;
+        c.shadowBlur = q.k * (16);
         c.beginPath(); c.arc(px + Math.cos(aa) * (26 + k * 2), yy, 6 - k * 0.25, 0, 6.3); c.fill();
       }
     } else if (s.kind === 'thunder' && age < 0.55) {
@@ -74,12 +74,12 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
           }
           const passes: [number, string, number][] = [[b ? 8 : 18, 'rgba(90,200,255,.45)', 22], [b ? 3 : 7, 'rgba(210,240,255,.95)', 12], [b ? 1.5 : 3, '#ffffff', 0]];
           for (const [lw, col, sb] of passes) {
-            c.strokeStyle = col; c.lineWidth = lw; c.shadowColor = '#7fdcff'; c.shadowBlur = sb;
+            c.strokeStyle = col; c.lineWidth = lw; c.shadowColor = '#7fdcff'; c.shadowBlur = q.k * (sb);
             c.beginPath(); pts.forEach((p, k) => (k ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.stroke();
           }
         }
       }
-      c.shadowBlur = 0;
+      c.shadowBlur = q.k * (0);
       c.strokeStyle = `rgba(160,220,255,${1 - age / 0.55})`;
       c.lineWidth = 5;
       c.beginPath(); c.ellipse(tx, GY, 20 + age * 300, 6 + age * 40, 0, 0, 6.3); c.stroke();
@@ -96,7 +96,7 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
       gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, core); gr.addColorStop(1, 'rgba(255,255,255,0)');
       c.fillStyle = gr;
       c.fillRect(tx - 80, -60, 160, GY + 60);
-      c.shadowColor = mid; c.shadowBlur = 60;
+      c.shadowColor = mid; c.shadowBlur = q.k * (60);
       c.fillStyle = core;
       c.fillRect(tx - 14, -60, 28, bladeY + 60);
       c.globalAlpha = 1;
@@ -115,7 +115,7 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
         }
       }
       if (teal) {
-        c.shadowBlur = 0;
+        c.shadowBlur = q.k * (0);
         c.font = '700 15px "JetBrains Mono",monospace';
         for (let k = 0; k < 40; k++) {
           const dx = (fr(k * 2.3) - 0.5) * 340;
@@ -126,7 +126,7 @@ export function drawSpecials(c: C2, eps: number, tau: number, P: Pal, px: number
       }
       if (age > 0.36) {
         const u = (age - 0.36) / 0.9;
-        c.shadowBlur = 0;
+        c.shadowBlur = q.k * (0);
         for (let k = 0; k < 3; k++) {
           c.strokeStyle = k === 0 ? `rgba(255,255,255,${1 - u})` : `${teal ? 'rgba(62,242,208,' : 'rgba(255,200,60,'}${(1 - u) * 0.8})`;
           c.lineWidth = 8 - k * 2;
@@ -145,7 +145,7 @@ export function drawLights(c: C2, eps: number, tau: number, P: Pal, tip: [number
   // sword light trail
   if (tip.length > 2) {
     c.shadowColor = stepCol;
-    c.shadowBlur = 30;
+    c.shadowBlur = q.k * (30);
     c.lineCap = 'round'; c.lineJoin = 'round';
     for (const [lw, col] of [[16, stepCol], [8, '#ffffff']] as [number, string][]) {
       c.strokeStyle = col; c.lineWidth = lw; c.globalAlpha = 0.85;
@@ -155,7 +155,7 @@ export function drawLights(c: C2, eps: number, tau: number, P: Pal, tip: [number
     const end = tip[tip.length - 1];
     const rg = c.createRadialGradient(end[0], end[1], 0, end[0], end[1], 46);
     rg.addColorStop(0, 'rgba(255,255,255,.95)'); rg.addColorStop(1, 'rgba(255,255,255,0)');
-    c.fillStyle = rg; c.shadowBlur = 0;
+    c.fillStyle = rg; c.shadowBlur = q.k * (0);
     c.beginPath(); c.arc(end[0], end[1], 46, 0, 6.3); c.fill();
   }
   // boss auras
@@ -244,10 +244,10 @@ export function drawHitExtras(c: C2, eps: number, P: Pal) {
       const y1 = hy + Math.sin(a) * sp * (age - 0.03) + 700 * (age - 0.03) * (age - 0.03) * 0.5;
       c.strokeStyle = h.fx === 'clang' ? `rgba(255,225,110,${1 - age / 0.8})` : `rgba(255,${(150 + fr(i) * 90) | 0},60,${1 - age / 0.8})`;
       c.lineWidth = 2.5;
-      c.shadowColor = FIRE; c.shadowBlur = P.night > 0.4 ? 10 : 0;
+      c.shadowColor = FIRE; c.shadowBlur = q.k * (P.night > 0.4 ? 10 : 0);
       c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
     }
-    c.shadowBlur = 0;
+    c.shadowBlur = q.k * (0);
     // shockwave rings
     const rings = h.fx === 'final' ? 3 : h.step === 3 || h.fx === 'impact' ? 2 : 1;
     for (let k = 0; k < rings; k++) {
@@ -275,7 +275,8 @@ export function drawHitExtras(c: C2, eps: number, P: Pal) {
 }
 
 /* ---------- screen-space overlays ---------- */
-export function drawSpecialBanner(c: C2, eps: number, P: Pal) {
+export function drawSpecialBanner(c: C2, eps: number, P: Pal, vw = W) {
+  const narrow = vw < 800;
   SCRIPT.specials.forEach((s, i) => {
     const age = eps - SP_EPS[i];
     if (age < 0 || age > 1.5) return;
@@ -288,37 +289,42 @@ export function drawSpecialBanner(c: C2, eps: number, P: Pal) {
     c.beginPath(); c.moveTo(0, 0); c.lineTo(W + 80, -6); c.lineTo(W + 80, 46); c.lineTo(0, 52); c.closePath(); c.fill();
     c.fillStyle = RED; c.fillRect(0, 47, W + 80, 5);
     c.fillStyle = GOLD;
-    c.font = '400 42px "Ma Shan Zheng",cursive';
+    const zs = narrow ? 34 : 42;
+    c.font = `400 ${zs}px "Ma Shan Zheng",cursive`;
     c.textBaseline = 'middle';
-    c.fillText(s.zh, 34, 24);
+    c.fillText(s.zh, 22, 24);
     c.fillStyle = css(P.paper);
-    c.font = '400 32px Bangers,Impact,sans-serif';
-    c.fillText(`SECRET ART · ${s.name}`, 34 + s.zh.length * 44 + 18, 26);
+    c.font = `400 ${narrow ? 25 : 32}px Bangers,Impact,sans-serif`;
+    c.fillText(`SECRET ART · ${s.name}`, 22 + s.zh.length * (zs + 2) + 14, 26);
     c.restore();
   });
 }
-export function drawChapterCard(c: C2, eps: number, P: Pal) {
+export function drawChapterCard(c: C2, eps: number, P: Pal, vw = W) {
+  const narrow = vw < 800;
   SCRIPT.chapters.forEach((ch, i) => {
     const age = eps - CH_EPS[i];
     if (age < 0 || age > 2.1) return;
     const inU = ease(clamp(age / 0.3, 0, 1));
     const outU = ease(clamp((age - 1.7) / 0.4, 0, 1));
     c.save();
-    c.translate(lerp(W, 0, inU) - outU * W, 0);
+    c.translate(lerp(vw, 0, inU) - outU * vw, 0);
     c.fillStyle = css(P.ink, 0.94);
-    c.beginPath(); c.moveTo(-40, H * 0.36); c.lineTo(W + 40, H * 0.3); c.lineTo(W + 40, H * 0.56); c.lineTo(-40, H * 0.62); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-40, H * 0.36); c.lineTo(vw + 40, H * 0.3); c.lineTo(vw + 40, H * 0.56); c.lineTo(-40, H * 0.62); c.closePath(); c.fill();
     c.fillStyle = RED;
-    c.beginPath(); c.moveTo(-40, H * 0.355); c.lineTo(W + 40, H * 0.295); c.lineTo(W + 40, H * 0.305); c.lineTo(-40, H * 0.365); c.closePath(); c.fill();
-    c.font = '400 170px "Ma Shan Zheng",cursive';
+    c.beginPath(); c.moveTo(-40, H * 0.355); c.lineTo(vw + 40, H * 0.295); c.lineTo(vw + 40, H * 0.305); c.lineTo(-40, H * 0.365); c.closePath(); c.fill();
+    const zs = narrow ? 112 : 170;
+    const zx = narrow ? 18 : 70;
+    c.font = `400 ${zs}px "Ma Shan Zheng",cursive`;
     c.textBaseline = 'middle';
     c.fillStyle = RED;
-    c.fillText(ch.zh, 70, H * 0.47);
+    c.fillText(ch.zh, zx, H * 0.47);
     c.fillStyle = css(P.paper);
-    c.font = '400 70px Bangers,Impact,sans-serif';
-    c.fillText(ch.name, 70 + 190, H * 0.46);
+    c.font = `400 ${narrow ? 36 : 70}px Bangers,Impact,sans-serif`;
+    const nx = zx + (narrow ? 128 : 190);
+    c.fillText(ch.name, nx, H * 0.46);
     c.font = '700 14px "JetBrains Mono",monospace';
     c.fillStyle = GOLD;
-    c.fillText(`CHAPTER ${String(i + 1).padStart(2, '0')}`, 70 + 192, H * 0.55);
+    c.fillText(`CHAPTER ${String(i + 1).padStart(2, '0')}`, nx + 2, H * 0.55);
     c.restore();
   });
 }

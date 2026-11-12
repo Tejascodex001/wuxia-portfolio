@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { renderFrame } from '@/game/render';
+import { LANDSCAPE, PORTRAIT, renderFrame, type View } from '@/game/render';
+import { q } from '@/game/util';
 import { sound } from '@/game/audio';
 import { H, SCRIPT, TOTAL_EPS, W, toEps } from '@/game/script';
 import { background, featured, otherWork, profile, toolbox } from '@/data/content';
@@ -70,14 +71,19 @@ const ScrollStage = ({ onRead }: Props) => {
     const rows = Array.from(root.querySelectorAll<HTMLElement>('[data-at]'));
     const chapBtns = Array.from(root.querySelectorAll<HTMLElement>('[data-chap]'));
 
-    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    q.k = coarse ? 0 : 1; // canvas shadow blur is very slow on phone GPUs
+    let view: View = LANDSCAPE;
     let scale = 1;
     const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const portrait = window.innerWidth < window.innerHeight * 0.9;
+      view = portrait ? PORTRAIT : LANDSCAPE;
+      root.style.setProperty('--ar', `${view.vw} / ${H}`);
+      const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.75 : 2);
       const r = canvas.getBoundingClientRect();
       canvas.width = Math.round(r.width * dpr);
-      canvas.height = Math.round((r.width * H) / W * dpr);
-      scale = canvas.width / W;
+      canvas.height = Math.round(((r.width * H) / view.vw) * dpr);
+      scale = canvas.width / view.vw;
     };
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
@@ -177,7 +183,7 @@ const ScrollStage = ({ onRead }: Props) => {
       cur += (tgt - cur) * (1 - Math.exp(-dt * 11));
       if (Math.abs(tgt - cur) < 1e-4) cur = tgt;
 
-      const info = renderFrame(ctx, canvas, cur, scale, now / 1000);
+      const info = renderFrame(ctx, canvas, cur, scale, now / 1000, view);
       sound.update(prevCur, cur, info.tau, (cur - prevCur) / Math.max(dt, 0.001) * 0.2);
       prevCur = cur;
       lastTau = info.tau;
@@ -259,9 +265,8 @@ const ScrollStage = ({ onRead }: Props) => {
 
         {/* ---------- scene 0: gate ---------- */}
         <div className="cue" ref={hint} aria-hidden="true">
-          <span>SCROLL OR PRESS</span>
-          <kbd>↓</kbd>
-          <span>TO RUN · HOLD TO KEEP RUNNING · <kbd>↑</kbd> REWIND · <kbd>←</kbd><kbd>→</kbd> CHAPTERS</span>
+          <span className="kb-only">SCROLL OR PRESS <kbd>↓</kbd> TO RUN · HOLD TO KEEP RUNNING · <kbd>↑</kbd> REWIND · <kbd>←</kbd><kbd>→</kbd> CHAPTERS</span>
+          <span className="touch-only">SWIPE UP TO RUN · SWIPE DOWN TO REWIND · TAP A CHAPTER TO JUMP</span>
         </div>
 
         {/* ---------- captions ---------- */}
